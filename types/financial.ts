@@ -153,6 +153,19 @@ export type ModelAudit = {
   overallStatus: "healthy" | "watch" | "risky";
   items: AuditItem[];
 };
+export type GoalScoreDriver = {
+  label: string;
+  impact: number;
+  explanation: string;
+};
+
+export type GoalScenario = {
+  name: "Conservative" | "Base" | "Optimistic";
+  status: GoalAnalysisStatus;
+  goalScore: number;
+  summary: string;
+  metrics: GoalMetric[];
+};
 
 export type GoalAnalysisStatus = "strong" | "watch" | "risky";
 
@@ -168,10 +181,13 @@ export type GoalAnalysis = {
   status: GoalAnalysisStatus;
   goalScore: number;
   scoreAdjustment: number;
+  marginOfSafety: string;
   summary: string;
   recommendationImpact: string;
   metrics: GoalMetric[];
   decisionRules: string[];
+  scoreDrivers: GoalScoreDriver[];
+  scenarios: GoalScenario[];
 };
 
 export type FinancialResult = {

@@ -99,6 +99,24 @@ function getStatusClass(status: string) {
   return "border-red-400/30 bg-red-400/10 text-red-300";
 }
 
+function getScenarioClass(status: string) {
+  if (status === "strong") {
+    return "border-emerald-400/20 bg-emerald-400/10";
+  }
+
+  if (status === "watch") {
+    return "border-yellow-400/20 bg-yellow-400/10";
+  }
+
+  return "border-red-400/20 bg-red-400/10";
+}
+
+function getDriverImpactClass(impact: number) {
+  if (impact > 0) return "text-emerald-300";
+  if (impact < 0) return "text-red-300";
+  return "text-slate-400";
+}
+
 function MetricCard({
   label,
   value,
@@ -113,8 +131,12 @@ function MetricCard({
       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
         {label}
       </p>
+
       <p className="mt-2 text-xl font-semibold text-white">{value}</p>
-      {detail && <p className="mt-2 text-xs leading-5 text-slate-500">{detail}</p>}
+
+      {detail && (
+        <p className="mt-2 text-xs leading-5 text-slate-500">{detail}</p>
+      )}
     </div>
   );
 }
@@ -209,32 +231,32 @@ export default function ResultsCard({ result }: Props) {
     {
       id: "overview",
       label: "Overview",
-      description: "Score, recommendation, action plan, and snapshot.",
+      description: "Score, recommendation, and snapshot.",
     },
     {
       id: "goal",
       label: getGoalLabel(result.goal),
-      description: "Goal-specific model and decision rules.",
+      description: "Goal model, drivers, and scenarios.",
     },
     {
       id: "risk",
       label: "Risk",
-      description: "Sensitivity, Monte Carlo, and scenarios.",
+      description: "Sensitivity and Monte Carlo.",
     },
     {
       id: "assumptions",
       label: "Assumptions",
-      description: "Discount rate, growth, and simulation settings.",
+      description: "Growth, discount, and model settings.",
     },
     {
       id: "audit",
       label: "Audit",
-      description: "Input quality and model risk flags.",
+      description: "Input quality and risk flags.",
     },
     {
       id: "report",
       label: "Report",
-      description: "Download your PDF report.",
+      description: "Download your PDF.",
     },
   ];
 
@@ -331,6 +353,19 @@ export default function ResultsCard({ result }: Props) {
 
               <div className="mt-4">
                 <GoalScoreBar value={goalAnalysis.goalScore} />
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <MetricCard
+                  label="Margin of Safety"
+                  value={goalAnalysis.marginOfSafety}
+                  detail="How much cushion the selected goal has under the model."
+                />
+                <MetricCard
+                  label="Goal Fit Score"
+                  value={`${result.score.goalFitScore}/25`}
+                  detail="Converted from the goal model score and included in the final readiness score."
+                />
               </div>
 
               <button
@@ -488,20 +523,21 @@ export default function ResultsCard({ result }: Props) {
             <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
               <GoalScoreBar value={goalAnalysis.goalScore} />
 
-              <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
                 <MetricCard
                   label="Goal Score"
                   value={`${goalAnalysis.goalScore}/100`}
-                  detail="Goal-specific model score before being converted into the 25-point Goal Fit score."
+                  detail="Goal-specific score before being converted into the 25-point Goal Fit score."
                 />
                 <MetricCard
-                  label="Score Adjustment"
-                  value={
-                    goalAnalysis.scoreAdjustment >= 0
-                      ? `+${goalAnalysis.scoreAdjustment}`
-                      : `${goalAnalysis.scoreAdjustment}`
-                  }
-                  detail="Directional impact from the selected goal model."
+                  label="Goal Fit Score"
+                  value={`${result.score.goalFitScore}/25`}
+                  detail="This is the weighted goal component inside the final readiness score."
+                />
+                <MetricCard
+                  label="Margin of Safety"
+                  value={goalAnalysis.marginOfSafety}
+                  detail="The cushion or room for error in the selected goal model."
                 />
               </div>
             </div>
@@ -524,7 +560,7 @@ export default function ResultsCard({ result }: Props) {
 
             <p className="mt-2 text-sm leading-6 text-slate-300">
               These are the calculations that are specific to the selected goal.
-              This is the section that makes the model change based on the user&apos;s
+              This is what makes the model change based on the user&apos;s
               decision objective.
             </p>
 
@@ -536,6 +572,113 @@ export default function ResultsCard({ result }: Props) {
                   value={metric.value}
                   detail={metric.detail}
                 />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-orange-400/20 bg-orange-400/10 p-5">
+            <p className="text-sm uppercase tracking-[0.2em] text-orange-300">
+              Goal Score Drivers
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              These reason codes show exactly why the goal model raised or
+              lowered the goal score.
+            </p>
+
+            <div className="mt-5 space-y-3">
+              {goalAnalysis.scoreDrivers.map((driver, index) => (
+                <div
+                  key={`${driver.label}-${index}`}
+                  className="rounded-2xl border border-white/10 bg-slate-950/60 p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="font-semibold text-white">
+                        {driver.label}
+                      </p>
+                      <p className="mt-1 text-sm leading-6 text-slate-400">
+                        {driver.explanation}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-sm font-bold ${getDriverImpactClass(
+                        driver.impact
+                      )}`}
+                    >
+                      {driver.impact > 0
+                        ? `+${driver.impact}`
+                        : `${driver.impact}`}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-blue-400/20 bg-blue-400/10 p-5">
+            <p className="text-sm uppercase tracking-[0.2em] text-blue-300">
+              Conservative / Base / Optimistic Cases
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              These cases stress the selected goal&apos;s key assumptions to
+              show how stable the decision is.
+            </p>
+
+            <div className="mt-5 grid gap-4 xl:grid-cols-3">
+              {goalAnalysis.scenarios.map((scenario) => (
+                <div
+                  key={scenario.name}
+                  className={`rounded-3xl border p-5 ${getScenarioClass(
+                    scenario.status
+                  )}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-white">
+                        {scenario.name} Case
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-400">
+                        {scenario.summary}
+                      </p>
+                    </div>
+
+                    <div
+                      className={`rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClass(
+                        scenario.status
+                      )}`}
+                    >
+                      {getGoalStatusLabel(scenario.status)}
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <GoalScoreBar value={scenario.goalScore} />
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {scenario.metrics.map((metric) => (
+                      <div
+                        key={`${scenario.name}-${metric.label}`}
+                        className="rounded-2xl border border-white/10 bg-slate-950/50 p-3"
+                      >
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                          {metric.label}
+                        </p>
+                        <p className="mt-1 text-lg font-semibold text-white">
+                          {metric.value}
+                        </p>
+                        {metric.detail && (
+                          <p className="mt-1 text-xs leading-5 text-slate-500">
+                            {metric.detail}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </div>
