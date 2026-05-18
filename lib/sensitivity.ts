@@ -3,11 +3,33 @@ import {
   SensitivityAnalysis,
   SensitivityCell,
 } from "@/types/financial";
-import {
-  calculateAssetValue,
-  calculateDebtPV,
-  presentValueOfAnnuity,
-} from "@/lib/calculations";
+import { calculateAssetValue, calculateDebtPV } from "@/lib/calculations";
+
+function getIndustryGrowthRate(industry: FinancialInput["industry"]): number {
+  const rates = {
+    finance: 0.034,
+    technology: 0.065,
+    healthcare: 0.084,
+    real_estate: 0.033,
+    education: 0.002,
+    retail: -0.012,
+    other: 0.031,
+  };
+
+  return rates[industry];
+}
+
+function normalizeIncomeGrowthRate(rawIncomeGrowthRate: number): number {
+  const sustainableGrowthRate = 0.05;
+
+  if (rawIncomeGrowthRate <= sustainableGrowthRate) {
+    return rawIncomeGrowthRate;
+  }
+
+  const excessGrowth = rawIncomeGrowthRate - sustainableGrowthRate;
+
+  return sustainableGrowthRate + excessGrowth * 0.35;
+}
 
 function calculateIncomePVWithAssumptions(
   input: FinancialInput,
@@ -37,22 +59,32 @@ function calculateIncomePVWithAssumptions(
 
 function calculateExpensePVWithAssumptions(
   input: FinancialInput,
+  expenseGrowthRate: number,
   discountRate: number
 ): number {
-  const monthlyDiscountRate = discountRate / 12;
-  const months = Math.max(input.retirementAge - input.age, 0) * 12;
+  const yearsUntilRetirement = Math.max(input.retirementAge - input.age, 0);
+  const annualExpenses = input.monthlyExpenses * 12;
 
-  return presentValueOfAnnuity(
-    input.monthlyExpenses,
-    monthlyDiscountRate,
-    months
-  );
+  let totalPV = 0;
+
+  for (let year = 1; year <= yearsUntilRetirement; year++) {
+    const projectedExpenses =
+      annualExpenses * Math.pow(1 + expenseGrowthRate, year);
+
+    const discountedExpenses =
+      projectedExpenses / Math.pow(1 + discountRate, year);
+
+    totalPV += discountedExpenses;
+  }
+
+  return totalPV;
 }
 
 function calculateNetPositionWithAssumptions(
   input: FinancialInput,
   discountRate: number,
-  incomeGrowthRate: number
+  incomeGrowthRate: number,
+  expenseGrowthRate: number
 ): number {
   const incomePV = calculateIncomePVWithAssumptions(
     input,
@@ -60,7 +92,12 @@ function calculateNetPositionWithAssumptions(
     discountRate
   );
 
-  const expensePV = calculateExpensePVWithAssumptions(input, discountRate);
+  const expensePV = calculateExpensePVWithAssumptions(
+    input,
+    expenseGrowthRate,
+    discountRate
+  );
+
   const assetValue = calculateAssetValue(input);
   const debtPV = calculateDebtPV(input);
 
@@ -71,7 +108,18 @@ export function generateSensitivityAnalysis(
   input: FinancialInput
 ): SensitivityAnalysis {
   const baseDiscountRate = input.discountRate / 100;
-  const baseIncomeGrowthRate = input.baseIncomeGrowthRate / 100;
+  const baseExpenseGrowthRate = input.expenseGrowthRate / 100;
+
+  const industryGrowthRate = getIndustryGrowthRate(input.industry);
+
+  const rawBaseIncomeGrowthRate =
+    input.occupationStatus === "unemployed"
+      ? 0
+      : input.baseIncomeGrowthRate / 100 + industryGrowthRate;
+
+  const normalizedBaseIncomeGrowthRate = normalizeIncomeGrowthRate(
+    rawBaseIncomeGrowthRate
+  );
 
   const discountRates = [
     Math.max(0.01, baseDiscountRate - 0.01),
@@ -81,10 +129,10 @@ export function generateSensitivityAnalysis(
   ];
 
   const incomeGrowthRates = [
-    Math.max(0, baseIncomeGrowthRate - 0.01),
-    baseIncomeGrowthRate,
-    baseIncomeGrowthRate + 0.01,
-    baseIncomeGrowthRate + 0.02,
+    Math.max(-0.03, normalizedBaseIncomeGrowthRate - 0.03),
+    Math.max(-0.03, normalizedBaseIncomeGrowthRate - 0.02),
+    Math.max(-0.03, normalizedBaseIncomeGrowthRate - 0.01),
+    normalizedBaseIncomeGrowthRate,
   ];
 
   const table: SensitivityCell[] = [];
@@ -97,7 +145,8 @@ export function generateSensitivityAnalysis(
         netPosition: calculateNetPositionWithAssumptions(
           input,
           discountRate,
-          incomeGrowthRate
+          incomeGrowthRate,
+          baseExpenseGrowthRate
         ),
       });
     }
@@ -106,20 +155,14 @@ export function generateSensitivityAnalysis(
   const baseCase = calculateNetPositionWithAssumptions(
     input,
     baseDiscountRate,
-    baseIncomeGrowthRate
+    normalizedBaseIncomeGrowthRate,
+    baseExpenseGrowthRate
   );
 
-  const downsideCase = calculateNetPositionWithAssumptions(
-    input,
-    baseDiscountRate + 0.02,
-    Math.max(0, baseIncomeGrowthRate - 0.01)
-  );
+  const tableValues = table.map((cell) => cell.netPosition);
 
-  const upsideCase = calculateNetPositionWithAssumptions(
-    input,
-    Math.max(0.01, baseDiscountRate - 0.01),
-    baseIncomeGrowthRate + 0.02
-  );
+  const downsideCase = Math.min(...tableValues, baseCase);
+  const upsideCase = Math.max(...tableValues, baseCase);
 
   return {
     discountRates,

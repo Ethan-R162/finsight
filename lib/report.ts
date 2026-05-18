@@ -13,6 +13,12 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(0)}%`;
 }
 
+function formatAuditStatus(status: string): string {
+  if (status === "healthy") return "Healthy";
+  if (status === "watch") return "Watch";
+  return "Risky";
+}
+
 function shouldShowHousingData(result: FinancialResult): boolean {
   return result.goal === "buy_house" || result.goal === "rent_vs_buy";
 }
@@ -185,19 +191,18 @@ export function downloadPDFReport(result: FinancialResult) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(203, 213, 225);
-  
+
   const scoreDescription =
     "A directional readiness score based on emergency fund, debt health, asset strength, and goal fit.";
-  
+
   const scoreDescriptionLines = doc.splitTextToSize(scoreDescription, 100);
   doc.text(scoreDescriptionLines, 80, 58);
-  
+
   doc.setFillColor(30, 41, 59);
   doc.rect(80, 70, 100, 4, "F");
-  
+
   doc.setFillColor(34, 211, 238);
   doc.rect(80, 70, Math.max(4, result.score.totalScore), 4, "F");
-
 
   addFooter(doc);
 
@@ -389,7 +394,7 @@ export function downloadPDFReport(result: FinancialResult) {
   doc.setTextColor(226, 232, 240);
   y = addWrappedText(
     doc,
-    "Sensitivity analysis tests net position around the user's selected income growth and discount rate assumptions.",
+    "Sensitivity analysis tests net position around the user's selected discount rate and normalized income growth assumptions. The base case is designed to match the main model output.",
     14,
     y,
     182,
@@ -459,18 +464,84 @@ export function downloadPDFReport(result: FinancialResult) {
 
   y += 6;
 
+  // User-selected assumptions
+  y = addSectionTitle(doc, "User-Selected Model Assumptions", y);
+
+  y = addKeyValue(
+    doc,
+    "Discount Rate",
+    `${result.modelAssumptions.discountRate}%`,
+    14,
+    y
+  );
+  y = addKeyValue(
+    doc,
+    "Base Income Growth",
+    `${result.modelAssumptions.baseIncomeGrowthRate}%`,
+    14,
+    y
+  );
+  y = addKeyValue(
+    doc,
+    "Expense Growth / Inflation",
+    `${result.modelAssumptions.expenseGrowthRate}%`,
+    14,
+    y
+  );
+  y = addKeyValue(
+    doc,
+    "Expected Investment Return",
+    `${result.modelAssumptions.expectedInvestmentReturn}%`,
+    14,
+    y
+  );
+  y = addKeyValue(
+    doc,
+    "Monte Carlo Runs",
+    result.modelAssumptions.monteCarloRuns.toLocaleString(),
+    14,
+    y
+  );
+
+  y += 6;
+
+  // Model audit
+  y = addSectionTitle(doc, "Model Audit", y);
+
+  y = addKeyValue(
+    doc,
+    "Overall Status",
+    formatAuditStatus(result.modelAudit.overallStatus),
+    14,
+    y
+  );
+
+  y += 4;
+
+  const auditItems = result.modelAudit.items.map(
+    (item) =>
+      `${item.severity.toUpperCase()}: ${item.title} - ${item.message}`
+  );
+
+  y = addBulletList(doc, auditItems, 14, y, 175);
+  y += 4;
+
   // Methodology
-  y = addSectionTitle(doc, "Model Methodology and Assumptions", y);
+  y = addSectionTitle(doc, "Model Methodology", y);
 
   const methodology = [
-    "Net Position = Income PV + Current Assets - Debt PV - Expense PV",
-    "Income PV discounts projected future income back to present value.",
-    "Debt PV uses the annuity present value formula for recurring debt payments.",
-    "Sensitivity analysis varies income growth and discount rate assumptions.",
-    "Monte Carlo randomizes income growth, discount rate, investment return, and expense growth.",
+    "Net Position = Income PV + Current Assets - Debt PV - Expense PV.",
+    "Income PV discounts projected future income back to present value using the user's selected discount rate.",
+    "Future income is based on the user's base income growth assumption plus an industry growth baseline.",
+    "Income growth is softly normalized. Growth up to 5% is used directly, while growth above 5% keeps only 35% of the excess growth above 5%.",
+    "Soft normalization allows high-growth careers to retain upside while preventing short-term growth assumptions from being projected unrealistically across an entire career.",
+    "Expense PV projects annual expenses using the user's expense growth assumption and discounts those expenses back to present value.",
+    "Debt PV uses the annuity present value formula for recurring debt payments, while credit card debt is added directly as an immediate obligation.",
+    "Sensitivity analysis varies income growth and discount rate assumptions around the user's selected inputs.",
+    "Monte Carlo simulation randomizes income growth, discount rate, investment return, and expense growth to estimate downside, median, and upside outcomes.",
     ...(showHousingData
       ? [
-          "Buy vs Rent NPV compares the present value cost of renting versus buying over the holding period.",
+          "Buy vs Rent NPV compares the present value cost of renting versus buying over the selected holding period.",
         ]
       : []),
   ];
@@ -478,18 +549,19 @@ export function downloadPDFReport(result: FinancialResult) {
   y = addBulletList(doc, methodology, 14, y, 175);
   y += 4;
 
-  y = addSectionTitle(doc, "Default Model Assumptions", y);
+  y = addSectionTitle(doc, "Key Assumptions", y);
 
   const assumptions = [
-    "Default discount rate: 5%, adjustable by user",
-    "Default base income growth: 2%, adjustable by user",
-    "Default expense growth / inflation: 2.5%, adjustable by user",
-    "Default expected investment return: 6%, adjustable by user",
-    "Default Monte Carlo trials: 1,000, adjustable by user",
-    "Emergency fund target: 3 months of expenses",
-    "High-interest debt threshold: 15% APR",
+    "Discount rate: user-selected rate used to convert future cash flows into present value.",
+    "Base income growth: user-selected growth rate combined with an industry growth baseline.",
+    "Income growth normalization: growth up to 5% is used directly; growth above 5% is softened by keeping 35% of the excess growth.",
+    "Expense growth: user-selected rate used to project annual expenses over time.",
+    "Expected investment return: user-selected return used in Monte Carlo simulations for invested assets.",
+    "Monte Carlo simulation count: user-selected number of randomized trials, limited between 100 and 10,000 runs.",
+    "Emergency fund target: at least 3 months of expenses.",
+    "High-interest credit card debt threshold: 15% APR.",
     ...(showHousingData
-      ? ["Mortgage term used in Buy vs Rent model: 30 years"]
+      ? ["Mortgage term used in the Buy vs Rent model: 30 years."]
       : []),
   ];
 
@@ -501,10 +573,13 @@ export function downloadPDFReport(result: FinancialResult) {
   const limitations = [
     "The model is directional and scenario-based, not predictive.",
     "The model does not include taxes.",
-    "The model does not use live market, mortgage, or inflation data.",
+    "The model does not use live market, mortgage, inflation, or salary data.",
+    "Industry growth rates are simplified baselines and may not reflect a specific person's career path.",
+    "Income growth is normalized to prevent unusually high short-term growth from being projected unrealistically across an entire career.",
     "The model does not include exact state-specific cost-of-living adjustments.",
     "The model uses simplified assumptions for educational purposes.",
-    "The model does not replace a certified financial planner.",
+    "The model does not replace a financial advisor.",
+    "The model does not provide legal, tax, investment, or financial advice.",
   ];
 
   y = addBulletList(doc, limitations, 14, y, 175);
@@ -546,9 +621,25 @@ Priority Action Plan:
 ${result.actionPlan.map((item, index) => `${index + 1}. ${item}`).join("\n")}
 ${housingSection}
 
+Sensitivity Analysis:
+Downside Case: ${formatCurrency(result.sensitivityAnalysis.downsideCase)}
+Base Case: ${formatCurrency(result.sensitivityAnalysis.baseCase)}
+Upside Case: ${formatCurrency(result.sensitivityAnalysis.upsideCase)}
+
 Monte Carlo:
 Probability Positive: ${formatPercent(result.monteCarloResult.probabilityPositive)}
+10th Percentile: ${formatCurrency(result.monteCarloResult.tenthPercentile)}
 Median Net Position: ${formatCurrency(result.monteCarloResult.median)}
+90th Percentile: ${formatCurrency(result.monteCarloResult.ninetiethPercentile)}
+
+Model Audit:
+Overall Status: ${formatAuditStatus(result.modelAudit.overallStatus)}
+${result.modelAudit.items
+  .map((item) => `- ${item.severity.toUpperCase()}: ${item.title}`)
+  .join("\n")}
+
+Methodology:
+FInsight uses present value analysis to estimate future income, expenses, debt, and assets in today's dollars. Future income is based on the user's base growth assumption plus an industry baseline. Growth up to 5% is used directly, while growth above 5% is softly normalized by keeping 35% of the excess growth above 5%.
 
 Disclaimer:
 FInsight is for educational purposes only and does not provide financial, investment, tax, or legal advice.

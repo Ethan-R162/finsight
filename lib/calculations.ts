@@ -29,28 +29,43 @@ function getIndustryGrowthRate(industry: FinancialInput["industry"]): number {
   return rates[industry];
 }
 
+function normalizeIncomeGrowthRate(rawIncomeGrowthRate: number): number {
+  const sustainableGrowthRate = 0.05;
+
+  if (rawIncomeGrowthRate <= sustainableGrowthRate) {
+    return rawIncomeGrowthRate;
+  }
+
+  const excessGrowth = rawIncomeGrowthRate - sustainableGrowthRate;
+
+  return sustainableGrowthRate + excessGrowth * 0.35;
+}
+
 export function calculateFutureIncomePV(input: FinancialInput): number {
   const yearsUntilRetirement = Math.max(input.retirementAge - input.age, 0);
+
+  if (input.occupationStatus === "retired") {
+    return 0;
+  }
 
   const discountRate = percentToDecimal(input.discountRate);
   const baseIncomeGrowthRate = percentToDecimal(input.baseIncomeGrowthRate);
   const industryGrowthRate = getIndustryGrowthRate(input.industry);
 
-  let incomeGrowthRate = baseIncomeGrowthRate + industryGrowthRate;
+  let rawIncomeGrowthRate = baseIncomeGrowthRate + industryGrowthRate;
 
   if (input.occupationStatus === "unemployed") {
-    incomeGrowthRate = 0;
+    rawIncomeGrowthRate = 0;
   }
 
-  if (input.occupationStatus === "retired") {
-    return 0;
-  }
+  const incomeGrowthRate = normalizeIncomeGrowthRate(rawIncomeGrowthRate);
 
   let totalPV = 0;
 
   for (let year = 1; year <= yearsUntilRetirement; year++) {
     const projectedIncome = input.income * Math.pow(1 + incomeGrowthRate, year);
     const discountedIncome = projectedIncome / Math.pow(1 + discountRate, year);
+
     totalPV += discountedIncome;
   }
 
@@ -81,14 +96,26 @@ export function calculateDebtPV(input: FinancialInput): number {
 }
 
 export function calculateExpensePV(input: FinancialInput): number {
-  const monthlyDiscountRate = percentToDecimal(input.discountRate) / 12;
-  const months = Math.max(input.retirementAge - input.age, 0) * 12;
+  const yearsUntilRetirement = Math.max(input.retirementAge - input.age, 0);
 
-  return presentValueOfAnnuity(
-    input.monthlyExpenses,
-    monthlyDiscountRate,
-    months
-  );
+  const discountRate = percentToDecimal(input.discountRate);
+  const expenseGrowthRate = percentToDecimal(input.expenseGrowthRate);
+
+  const annualExpenses = input.monthlyExpenses * 12;
+
+  let totalPV = 0;
+
+  for (let year = 1; year <= yearsUntilRetirement; year++) {
+    const projectedExpenses =
+      annualExpenses * Math.pow(1 + expenseGrowthRate, year);
+
+    const discountedExpenses =
+      projectedExpenses / Math.pow(1 + discountRate, year);
+
+    totalPV += discountedExpenses;
+  }
+
+  return totalPV;
 }
 
 export function calculateNetPosition(input: FinancialInput): number {

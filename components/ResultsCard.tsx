@@ -576,53 +576,156 @@ export default function ResultsCard({ result }: Props) {
       )}
 
       {activeTab === "assumptions" && (
-        <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-5">
-          <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
-            Model Assumptions
-          </p>
-
-          <p className="mt-2 text-sm leading-6 text-slate-300">
-            These are the user-adjusted assumptions used by the model to
-            calculate present value, sensitivity analysis, Monte Carlo
-            simulation, and the final recommendation.
-          </p>
-
-          <div className="mt-5 grid gap-3 md:grid-cols-2">
-            <MetricCard
-              label="Discount Rate"
-              value={`${result.modelAssumptions.discountRate}%`}
-            />
-            <MetricCard
-              label="Base Income Growth"
-              value={`${result.modelAssumptions.baseIncomeGrowthRate}%`}
-            />
-            <MetricCard
-              label="Expense Growth / Inflation"
-              value={`${result.modelAssumptions.expenseGrowthRate}%`}
-            />
-            <MetricCard
-              label="Expected Investment Return"
-              value={`${result.modelAssumptions.expectedInvestmentReturn}%`}
-            />
-            <MetricCard
-              label="Monte Carlo Runs"
-              value={result.modelAssumptions.monteCarloRuns.toLocaleString()}
-            />
-          </div>
-
-          <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-            <p className="text-sm font-semibold text-white">
-              Why these assumptions matter
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
+              Model Assumptions
             </p>
 
             <p className="mt-2 text-sm leading-6 text-slate-300">
-              The discount rate controls how future cash flows are converted
-              into today&apos;s dollars. Income growth affects projected future
-              earnings. Expense growth estimates how costs rise over time.
-              Expected investment return affects simulated asset growth. Monte
-              Carlo runs determine how many randomized scenarios the model uses
-              to estimate downside, median, and upside outcomes.
+              These are the user-adjusted assumptions used by the model to
+              calculate present value, sensitivity analysis, Monte Carlo
+              simulation, and the final recommendation.
             </p>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+              <MetricCard
+                label="Discount Rate"
+                value={`${result.modelAssumptions.discountRate}%`}
+              />
+              <MetricCard
+                label="Base Income Growth"
+                value={`${result.modelAssumptions.baseIncomeGrowthRate}%`}
+              />
+              <MetricCard
+                label="Expense Growth / Inflation"
+                value={`${result.modelAssumptions.expenseGrowthRate}%`}
+              />
+              <MetricCard
+                label="Expected Investment Return"
+                value={`${result.modelAssumptions.expectedInvestmentReturn}%`}
+              />
+              <MetricCard
+                label="Monte Carlo Runs"
+                value={result.modelAssumptions.monteCarloRuns.toLocaleString()}
+              />
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+              <p className="text-sm font-semibold text-white">
+                Why these assumptions matter
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-slate-300">
+                The discount rate controls how future cash flows are converted
+                into today&apos;s dollars. Income growth affects projected
+                future earnings. Expense growth estimates how costs rise over
+                time. Expected investment return affects simulated asset growth.
+                Monte Carlo runs determine how many randomized scenarios the
+                model uses to estimate downside, median, and upside outcomes.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <div className="rounded-3xl border border-sky-400/20 bg-sky-400/10 p-5">
+              <p className="text-sm uppercase tracking-[0.2em] text-sky-300">
+                Key Assumptions
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Discount rate: user-selected rate used to convert future cash
+                  flows into present value.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Base income growth: user-selected growth rate combined with an
+                  industry growth baseline.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Income growth normalization: growth up to 5% is used directly;
+                  growth above 5% is softened by keeping 35% of the excess
+                  growth.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Expense growth: user-selected rate used to project annual
+                  expenses over time.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Expected investment return: user-selected return used in Monte
+                  Carlo simulations for invested assets.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Monte Carlo simulation count: user-selected number of
+                  randomized trials, limited between 100 and 10,000 runs.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Emergency fund target: at least 3 months of expenses.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  High-interest credit card debt threshold: 15% APR.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Sensitivity analysis is built around the user&apos;s selected
+                  discount rate and normalized income growth assumptions.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Monte Carlo simulation randomizes income growth, discount
+                  rate, investment return, and expense growth.
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-orange-400/20 bg-orange-400/10 p-5">
+              <p className="text-sm uppercase tracking-[0.2em] text-orange-300">
+                Model Limitations
+              </p>
+
+              <div className="mt-5 space-y-3">
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  The model does not include taxes.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  The model does not use live market, mortgage, inflation, or
+                  salary data.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Industry growth rates are simplified baselines and may not
+                  reflect a specific person&apos;s career path.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  Income growth is normalized to prevent unusually high
+                  short-term growth from being projected unrealistically across
+                  an entire career.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  The model uses simplified assumptions for educational
+                  purposes.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  The model does not replace a financial advisor.
+                </p>
+
+                <p className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-200">
+                  The model does not provide legal, tax, investment, or
+                  financial advice.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}

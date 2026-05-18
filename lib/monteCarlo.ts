@@ -1,9 +1,5 @@
 import { FinancialInput, MonteCarloResult } from "@/types/financial";
-import {
-  calculateAssetValue,
-  calculateDebtPV,
-  presentValueOfAnnuity,
-} from "@/lib/calculations";
+import { presentValueOfAnnuity } from "@/lib/calculations";
 
 function randomNormal(mean: number, standardDeviation: number): number {
   let u = 0;
@@ -27,7 +23,9 @@ function percentile(values: number[], percentileValue: number): number {
   return sorted[index];
 }
 
-function getIndustryGrowthBaseline(industry: FinancialInput["industry"]): number {
+function getIndustryGrowthBaseline(
+  industry: FinancialInput["industry"]
+): number {
   const rates = {
     finance: 0.034,
     technology: 0.065,
@@ -39,6 +37,18 @@ function getIndustryGrowthBaseline(industry: FinancialInput["industry"]): number
   };
 
   return rates[industry];
+}
+
+function normalizeIncomeGrowthRate(rawIncomeGrowthRate: number): number {
+  const sustainableGrowthRate = 0.05;
+
+  if (rawIncomeGrowthRate <= sustainableGrowthRate) {
+    return rawIncomeGrowthRate;
+  }
+
+  const excessGrowth = rawIncomeGrowthRate - sustainableGrowthRate;
+
+  return sustainableGrowthRate + excessGrowth * 0.35;
 }
 
 function calculateSimulatedIncomePV(
@@ -144,41 +154,53 @@ function calculateSimulatedNetPosition(
   return incomePV + assetValue - debtPV - expensePV;
 }
 
-export function runMonteCarloSimulation(input: FinancialInput): MonteCarloResult {
+export function runMonteCarloSimulation(
+  input: FinancialInput
+): MonteCarloResult {
   const simulations = Math.max(100, Math.min(input.monteCarloRuns, 10000));
 
-const baseIndustryGrowth = getIndustryGrowthBaseline(input.industry);
+  const baseIndustryGrowth = getIndustryGrowthBaseline(input.industry);
+  const baseDiscountRate = input.discountRate / 100;
+  const baseInvestmentReturn = input.expectedInvestmentReturn / 100;
+  const baseExpenseGrowth = input.expenseGrowthRate / 100;
 
-const baseIncomeGrowth = Math.max(
-  0,
-  input.baseIncomeGrowthRate / 100 + baseIndustryGrowth
-);
+  const rawBaseIncomeGrowth =
+    input.occupationStatus === "unemployed"
+      ? 0
+      : input.baseIncomeGrowthRate / 100 + baseIndustryGrowth;
 
-const baseDiscountRate = input.discountRate / 100;
-const baseInvestmentReturn = input.expectedInvestmentReturn / 100;
-const baseExpenseGrowth = input.expenseGrowthRate / 100;
+  const normalizedBaseIncomeGrowth =
+    normalizeIncomeGrowthRate(rawBaseIncomeGrowth);
 
   const netPositions: number[] = [];
 
   for (let i = 0; i < simulations; i++) {
-    const incomeGrowthRate = Math.max(
-      -0.05,
-      randomNormal(baseIncomeGrowth, 0.03)
+    const simulatedDiscountRate = Math.max(
+      0.01,
+      randomNormal(baseDiscountRate, 0.015)
     );
 
-    const discountRate = Math.max(0.01, randomNormal(baseDiscountRate, 0.015));
+    const rawSimulatedIncomeGrowth = randomNormal(
+      normalizedBaseIncomeGrowth,
+      0.015
+    );
 
-    const investmentReturn = randomNormal(baseInvestmentReturn, 0.12);
+    const simulatedIncomeGrowthRate = Math.max(
+      -0.03,
+      normalizeIncomeGrowthRate(rawSimulatedIncomeGrowth)
+    );
+
+    const investmentReturn = randomNormal(baseInvestmentReturn, 0.08);
 
     const expenseGrowthRate = Math.max(
       0,
-      randomNormal(baseExpenseGrowth, 0.015)
+      randomNormal(baseExpenseGrowth, 0.01)
     );
 
     const simulatedNetPosition = calculateSimulatedNetPosition(
       input,
-      incomeGrowthRate,
-      discountRate,
+      simulatedIncomeGrowthRate,
+      simulatedDiscountRate,
       investmentReturn,
       expenseGrowthRate
     );
