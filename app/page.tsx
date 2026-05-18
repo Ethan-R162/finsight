@@ -52,11 +52,13 @@ function FInsightLogo() {
     </div>
   );
 }
+
 function ModelMethodology() {
   const formulas = [
     {
       title: "Net Position",
-      formula: "Net Position = Income PV + Current Assets − Debt PV − Expense PV",
+      formula:
+        "Net Position = Income PV + Current Assets − Debt PV − Expense PV",
       description:
         "This is the core output of the model. It combines future income, existing assets, liabilities, and projected expenses into one financial position estimate.",
     },
@@ -111,12 +113,12 @@ function ModelMethodology() {
           Model Methodology
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-        FInsight is built as a financial modeling tool that converts user
-        inputs into present value estimates, stress-tests assumptions, and
-        generates a recommendation based on net position, risk tolerance, time
-        horizon, and goal fit. The model also includes user-adjustable assumptions
-        for discount rate, income growth, expense growth, expected investment
-        return, and Monte Carlo simulation count.
+          FInsight is built as a financial modeling tool that converts user
+          inputs into present value estimates, stress-tests assumptions, and
+          generates a recommendation based on net position, risk tolerance, time
+          horizon, and goal fit. The model also includes user-adjustable
+          assumptions for discount rate, income growth, expense growth, expected
+          investment return, and Monte Carlo simulation count.
         </p>
       </div>
 
@@ -184,19 +186,20 @@ function ModelMethodology() {
           <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
             <p className="font-semibold text-white">Sensitivity Analysis</p>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-            The model tests how net position changes around the user's selected
-            income growth and discount rate assumptions. This shows how sensitive the
-            recommendation is to changes in core financial assumptions.
+              The model tests how net position changes around the user's
+              selected income growth and discount rate assumptions. This shows
+              how sensitive the recommendation is to changes in core financial
+              assumptions.
             </p>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
             <p className="font-semibold text-white">Monte Carlo Simulation</p>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-            The model runs a user-selected number of randomized simulations by changing
-            income growth, discount rate, investment return, and expense growth. The
-            output shows probability of positive net position, downside case, median
-            case, and upside case.
+              The model runs a user-selected number of randomized simulations by
+              changing income growth, discount rate, investment return, and
+              expense growth. The output shows probability of positive net
+              position, downside case, median case, and upside case.
             </p>
           </div>
         </div>
@@ -204,6 +207,169 @@ function ModelMethodology() {
     </section>
   );
 }
+
+function InputLandingPage({
+  onCalculate,
+}: {
+  onCalculate: (result: FinancialResult) => void;
+}) {
+  return (
+    <>
+      <section className="mb-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+        <div>
+          <div className="mb-4 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200">
+            Built for smarter financial decisions
+          </div>
+
+          <h2 className="max-w-4xl text-5xl font-bold tracking-tight text-white md:text-6xl">
+            Turn your financial life into a clear next move.
+          </h2>
+
+          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
+            FInsight analyzes income, assets, debt, expenses, risk tolerance,
+            time horizon, and adjustable model assumptions to generate a
+            financial recommendation with sensitivity and Monte Carlo outputs.
+          </p>
+        </div>
+
+        <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur">
+          <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
+            Current model
+          </p>
+
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="rounded-2xl bg-slate-950/70 p-4">
+              <p className="text-2xl font-bold text-cyan-300">PV</p>
+              <p className="mt-1 text-xs text-slate-400">Income + debt</p>
+            </div>
+
+            <div className="rounded-2xl bg-slate-950/70 p-4">
+              <p className="text-2xl font-bold text-emerald-300">Risk</p>
+              <p className="mt-1 text-xs text-slate-400">User profile</p>
+            </div>
+
+            <div className="rounded-2xl bg-slate-950/70 p-4">
+              <p className="text-2xl font-bold text-blue-300">Goal</p>
+              <p className="mt-1 text-xs text-slate-400">Decision rules</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl">
+        <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-1 shadow-2xl backdrop-blur">
+          <FinancialForm onCalculate={onCalculate} />
+        </div>
+      </section>
+
+      <ModelMethodology />
+    </>
+  );
+}
+
+function DashboardPage({
+  result,
+  onReset,
+}: {
+  result: FinancialResult;
+  onReset: () => void;
+}) {
+  const showHousingData =
+    result.goal === "buy_house" || result.goal === "rent_vs_buy";
+
+  return (
+    <>
+      <section className="mb-8">
+        <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-400/10 via-slate-950 to-emerald-400/10 p-5 shadow-2xl backdrop-blur md:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">
+                FInsight Dashboard
+              </p>
+              <h2 className="mt-2 text-4xl font-bold tracking-tight text-white">
+                Financial Model Results
+              </h2>
+              <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+                Your intake has been converted into a dashboard with present
+                value outputs, recommendation logic, scenario analysis, Monte
+                Carlo simulation, and AI model coaching.
+                {showHousingData && " Housing NPV is included for this goal."}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={onReset}
+              className="rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.09]"
+            >
+              Back to Edit Inputs
+            </button>
+          </div>
+
+          <div
+            className={`mt-6 grid gap-3 ${
+              showHousingData ? "md:grid-cols-4" : "md:grid-cols-3"
+            }`}
+          >
+            <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Score
+              </p>
+              <p className="mt-2 text-3xl font-bold text-white">
+                {result.score.totalScore}/100
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Net Position
+              </p>
+              <p
+                className={`mt-2 text-2xl font-bold ${
+                  result.netPosition >= 0 ? "text-emerald-300" : "text-red-300"
+                }`}
+              >
+                {new Intl.NumberFormat("en-US", {
+                  style: "currency",
+                  currency: "USD",
+                  maximumFractionDigits: 0,
+                }).format(result.netPosition)}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Positive Probability
+              </p>
+              <p className="mt-2 text-2xl font-bold text-orange-300">
+                {(result.monteCarloResult.probabilityPositive * 100).toFixed(0)}
+                %
+              </p>
+            </div>
+
+            {showHousingData && (
+              <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                  Buy/Rent Signal
+                </p>
+                <p className="mt-2 text-2xl font-bold uppercase text-teal-300">
+                  {result.buyRentAnalysis.recommendation}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-1 shadow-2xl backdrop-blur">
+        <ResultsCard result={result} onReset={onReset} />
+      </section>
+
+      <ModelMethodology />
+    </>
+  );
+}
+
 export default function Home() {
   const [result, setResult] = useState<FinancialResult | null>(null);
 
@@ -222,58 +388,11 @@ export default function Home() {
           </div>
         </nav>
 
-        <section className="mb-10 grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
-          <div>
-            <div className="mb-4 inline-flex rounded-full border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm text-cyan-200">
-              Built for smarter financial decisions
-            </div>
-
-            <h2 className="max-w-4xl text-5xl font-bold tracking-tight text-white md:text-6xl">
-              Turn your financial life into a clear next move.
-            </h2>
-
-            <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-            FInsight analyzes income, assets, debt, expenses, risk tolerance,
-            time horizon, and adjustable model assumptions to generate a financial
-            recommendation with sensitivity and Monte Carlo outputs.
-            </p>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur">
-            <p className="text-sm uppercase tracking-[0.25em] text-slate-400">
-              Current model
-            </p>
-
-            <div className="mt-4 grid grid-cols-3 gap-3">
-              <div className="rounded-2xl bg-slate-950/70 p-4">
-                <p className="text-2xl font-bold text-cyan-300">PV</p>
-                <p className="mt-1 text-xs text-slate-400">Income + debt</p>
-              </div>
-
-              <div className="rounded-2xl bg-slate-950/70 p-4">
-                <p className="text-2xl font-bold text-emerald-300">Risk</p>
-                <p className="mt-1 text-xs text-slate-400">User profile</p>
-              </div>
-
-              <div className="rounded-2xl bg-slate-950/70 p-4">
-                <p className="text-2xl font-bold text-blue-300">Goal</p>
-                <p className="mt-1 text-xs text-slate-400">Decision rules</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid gap-6 lg:grid-cols-[1fr_1fr]">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-1 shadow-2xl backdrop-blur">
-            <FinancialForm onCalculate={setResult} />
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-1 shadow-2xl backdrop-blur">
-            <ResultsCard result={result} />
-          </div>
-        </section>
-        
-        <ModelMethodology />
+        {!result ? (
+          <InputLandingPage onCalculate={setResult} />
+        ) : (
+          <DashboardPage result={result} onReset={() => setResult(null)} />
+        )}
       </div>
     </main>
   );

@@ -13,6 +13,10 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(0)}%`;
 }
 
+function shouldShowHousingData(result: FinancialResult): boolean {
+  return result.goal === "buy_house" || result.goal === "rent_vs_buy";
+}
+
 function addWrappedText(
   doc: jsPDF,
   text: string,
@@ -98,6 +102,8 @@ function addKeyValue(
   x: number,
   y: number
 ): number {
+  y = checkPageBreak(doc, y, 12);
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(148, 163, 184);
@@ -137,6 +143,7 @@ function addBulletList(
 }
 
 export function downloadPDFReport(result: FinancialResult) {
+  const showHousingData = shouldShowHousingData(result);
   const doc = new jsPDF("p", "mm", "a4");
 
   addPageBackground(doc);
@@ -178,14 +185,19 @@ export function downloadPDFReport(result: FinancialResult) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(203, 213, 225);
-  doc.text(
-    "A directional readiness score based on emergency fund, debt health, asset strength, and goal fit.",
-    80,
-    62
-  );
-
+  
+  const scoreDescription =
+    "A directional readiness score based on emergency fund, debt health, asset strength, and goal fit.";
+  
+  const scoreDescriptionLines = doc.splitTextToSize(scoreDescription, 100);
+  doc.text(scoreDescriptionLines, 80, 58);
+  
+  doc.setFillColor(30, 41, 59);
+  doc.rect(80, 70, 100, 4, "F");
+  
   doc.setFillColor(34, 211, 238);
   doc.rect(80, 70, Math.max(4, result.score.totalScore), 4, "F");
+
 
   addFooter(doc);
 
@@ -303,45 +315,47 @@ export function downloadPDFReport(result: FinancialResult) {
   y = addWrappedText(doc, result.scenarioComparison.summary, 14, y, 182, 5);
   y += 6;
 
-  // Buy vs Rent
-  y = addSectionTitle(doc, "Buy vs Rent NPV Model", y);
+  // Buy vs Rent only for housing goals
+  if (showHousingData) {
+    y = addSectionTitle(doc, "Buy vs Rent NPV Model", y);
 
-  y = addKeyValue(
-    doc,
-    "PV Cost of Renting",
-    formatCurrency(result.buyRentAnalysis.rentPV),
-    14,
-    y
-  );
-  y = addKeyValue(
-    doc,
-    "PV Cost of Buying",
-    formatCurrency(result.buyRentAnalysis.buyPV),
-    14,
-    y
-  );
-  y = addKeyValue(
-    doc,
-    "NPV Difference",
-    formatCurrency(result.buyRentAnalysis.difference),
-    14,
-    y
-  );
-  y = addKeyValue(
-    doc,
-    "Model Recommendation",
-    result.buyRentAnalysis.recommendation.toUpperCase(),
-    14,
-    y
-  );
+    y = addKeyValue(
+      doc,
+      "PV Cost of Renting",
+      formatCurrency(result.buyRentAnalysis.rentPV),
+      14,
+      y
+    );
+    y = addKeyValue(
+      doc,
+      "PV Cost of Buying",
+      formatCurrency(result.buyRentAnalysis.buyPV),
+      14,
+      y
+    );
+    y = addKeyValue(
+      doc,
+      "NPV Difference",
+      formatCurrency(result.buyRentAnalysis.difference),
+      14,
+      y
+    );
+    y = addKeyValue(
+      doc,
+      "Model Recommendation",
+      result.buyRentAnalysis.recommendation.toUpperCase(),
+      14,
+      y
+    );
 
-  y += 4;
+    y += 4;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(226, 232, 240);
-  y = addWrappedText(doc, result.buyRentAnalysis.summary, 14, y, 182, 5);
-  y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(226, 232, 240);
+    y = addWrappedText(doc, result.buyRentAnalysis.summary, 14, y, 182, 5);
+    y += 6;
+  }
 
   // Sensitivity
   y = addSectionTitle(doc, "Sensitivity Analysis", y);
@@ -454,7 +468,11 @@ export function downloadPDFReport(result: FinancialResult) {
     "Debt PV uses the annuity present value formula for recurring debt payments.",
     "Sensitivity analysis varies income growth and discount rate assumptions.",
     "Monte Carlo randomizes income growth, discount rate, investment return, and expense growth.",
-    "Buy vs Rent NPV compares the present value cost of renting versus buying over the holding period.",
+    ...(showHousingData
+      ? [
+          "Buy vs Rent NPV compares the present value cost of renting versus buying over the holding period.",
+        ]
+      : []),
   ];
 
   y = addBulletList(doc, methodology, 14, y, 175);
@@ -470,7 +488,9 @@ export function downloadPDFReport(result: FinancialResult) {
     "Default Monte Carlo trials: 1,000, adjustable by user",
     "Emergency fund target: 3 months of expenses",
     "High-interest debt threshold: 15% APR",
-    "Mortgage term used in Buy vs Rent model: 30 years",
+    ...(showHousingData
+      ? ["Mortgage term used in Buy vs Rent model: 30 years"]
+      : []),
   ];
 
   y = addBulletList(doc, assumptions, 14, y, 175);
@@ -496,6 +516,18 @@ export function downloadPDFReport(result: FinancialResult) {
 
 // Optional legacy text report support, in case anything still imports it.
 export function generateTextReport(result: FinancialResult): string {
+  const showHousingData = shouldShowHousingData(result);
+
+  const housingSection = showHousingData
+    ? `
+
+Buy vs Rent NPV Model:
+PV Cost of Renting: ${formatCurrency(result.buyRentAnalysis.rentPV)}
+PV Cost of Buying: ${formatCurrency(result.buyRentAnalysis.buyPV)}
+NPV Difference: ${formatCurrency(result.buyRentAnalysis.difference)}
+Recommendation: ${result.buyRentAnalysis.recommendation.toUpperCase()}`
+    : "";
+
   return `
 FInsight Financial Modeling Report
 
@@ -512,12 +544,7 @@ ${result.recommendation}
 
 Priority Action Plan:
 ${result.actionPlan.map((item, index) => `${index + 1}. ${item}`).join("\n")}
-
-Buy vs Rent NPV Model:
-PV Cost of Renting: ${formatCurrency(result.buyRentAnalysis.rentPV)}
-PV Cost of Buying: ${formatCurrency(result.buyRentAnalysis.buyPV)}
-NPV Difference: ${formatCurrency(result.buyRentAnalysis.difference)}
-Recommendation: ${result.buyRentAnalysis.recommendation.toUpperCase()}
+${housingSection}
 
 Monte Carlo:
 Probability Positive: ${formatPercent(result.monteCarloResult.probabilityPositive)}

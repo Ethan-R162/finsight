@@ -100,6 +100,7 @@ export default function FinancialForm({ onCalculate }: Props) {
     const buyRentAnalysis = generateBuyRentAnalysis(form);
     
     onCalculate({
+      goal: form.goal,
       incomePV,
       assetValue,
       debtPV,

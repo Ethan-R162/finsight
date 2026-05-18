@@ -127,6 +127,7 @@ export type BuyRentAnalysis = {
   summary: string;
 };
 export type FinancialResult = {
+  goal: Goal;
   incomePV: number;
   assetValue: number;
   debtPV: number;
