@@ -86,6 +86,41 @@ Average Net Position: ${formatCurrency(
 Worst Case: ${formatCurrency(result.monteCarloResult.worstCase)}
 Best Case: ${formatCurrency(result.monteCarloResult.bestCase)}
 ----------------------------------------
+MODEL METHODOLOGY
+----------------------------------------
+
+Core Net Position Formula:
+Net Position = Income PV + Current Assets − Debt PV − Expense PV
+
+Income Present Value:
+Income PV = Sum of projected future income discounted back to present value.
+
+Debt Present Value:
+Debt PV = Payment × [1 − (1 + r)^−n] / r
+
+Financial Readiness Score:
+Score = Emergency Fund Score + Debt Health Score + Asset Strength Score + Goal Fit Score
+
+Sensitivity Analysis:
+The model tests net position across income growth rates from 1% to 4% and discount rates from 4% to 7%.
+
+Monte Carlo Simulation:
+The model runs 1,000 randomized simulations by varying income growth, discount rate, investment return, and expense growth.
+
+Key Assumptions:
+- Base discount rate: 5%
+- Base income growth: 2% plus industry adjustment
+- Emergency fund target: 3 months of expenses
+- High-interest debt threshold: 15% APR
+- Monte Carlo trials: 1,000
+
+Limitations:
+- Does not include taxes
+- Does not use live market data
+- Does not include exact mortgage amortization
+- Uses simplified assumptions for educational purposes
+- Does not provide financial, legal, tax, or investment advice
+----------------------------------------
 DISCLAIMER
 ----------------------------------------
 

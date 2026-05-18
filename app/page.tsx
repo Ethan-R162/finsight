@@ -52,7 +52,154 @@ function FInsightLogo() {
     </div>
   );
 }
+function ModelMethodology() {
+  const formulas = [
+    {
+      title: "Net Position",
+      formula: "Net Position = Income PV + Current Assets − Debt PV − Expense PV",
+      description:
+        "This is the core output of the model. It combines future income, existing assets, liabilities, and projected expenses into one financial position estimate.",
+    },
+    {
+      title: "Income Present Value",
+      formula: "Income PV = Σ Projected Income_t / (1 + discount rate)^t",
+      description:
+        "Future income is projected forward and discounted back to today to estimate its present value.",
+    },
+    {
+      title: "Debt Present Value",
+      formula: "Debt PV = Payment × [1 − (1 + r)^−n] / r",
+      description:
+        "Debt payments are discounted using a loan present value formula so liabilities can be compared against assets and income.",
+    },
+    {
+      title: "Financial Readiness Score",
+      formula:
+        "Score = Emergency Fund + Debt Health + Asset Strength + Goal Fit",
+      description:
+        "The score converts the model output into a 100-point readiness measure across four financial categories.",
+    },
+  ];
 
+  const assumptions = [
+    "Base discount rate: 5%",
+    "Base income growth: 2% plus industry adjustment",
+    "Emergency fund target: at least 3 months of expenses",
+    "High-interest credit card debt threshold: 15% APR",
+    "Sensitivity analysis tests income growth from 1% to 4%",
+    "Sensitivity analysis tests discount rates from 4% to 7%",
+    "Monte Carlo simulation runs 1,000 randomized trials",
+  ];
+
+  const limitations = [
+    "The model does not include taxes.",
+    "The model does not use live market, mortgage, or inflation data.",
+    "The model uses simplified assumptions for educational purposes.",
+    "The model does not replace a financial advisor.",
+    "The model does not provide legal, tax, investment, or financial advice.",
+  ];
+
+  return (
+    <section className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur">
+      <div className="mb-8">
+        <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">
+          Model Documentation
+        </p>
+        <h2 className="mt-2 text-3xl font-bold text-white">
+          Model Methodology
+        </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
+          FInsight is built as a financial modeling tool that converts user
+          inputs into present value estimates, stress-tests assumptions, and
+          generates a recommendation based on net position, risk tolerance, time
+          horizon, and goal fit.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {formulas.map((item) => (
+          <div
+            key={item.title}
+            className="rounded-2xl border border-white/10 bg-slate-950/60 p-5"
+          >
+            <p className="text-sm font-semibold text-cyan-300">
+              {item.title}
+            </p>
+            <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 font-mono text-sm text-emerald-300">
+              {item.formula}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-slate-400">
+              {item.description}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-blue-400/20 bg-blue-400/10 p-5">
+          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">
+            Key Assumptions
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {assumptions.map((assumption) => (
+              <div
+                key={assumption}
+                className="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-sm text-slate-200"
+              >
+                {assumption}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-orange-400/20 bg-orange-400/10 p-5">
+          <p className="text-sm uppercase tracking-[0.2em] text-orange-300">
+            Model Limitations
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {limitations.map((limitation) => (
+              <div
+                key={limitation}
+                className="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-sm text-slate-200"
+              >
+                {limitation}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-purple-400/20 bg-purple-400/10 p-5">
+        <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
+          Advanced Modeling Features
+        </p>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="font-semibold text-white">Sensitivity Analysis</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              The model tests how net position changes across different income
+              growth and discount rate assumptions. This shows how sensitive the
+              recommendation is to changes in core financial assumptions.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="font-semibold text-white">Monte Carlo Simulation</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              The model runs 1,000 randomized simulations by changing income
+              growth, discount rate, investment return, and expense growth. The
+              output shows probability of positive net position, downside case,
+              median case, and upside case.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 export default function Home() {
   const [result, setResult] = useState<FinancialResult | null>(null);
 
@@ -120,6 +267,8 @@ export default function Home() {
             <ResultsCard result={result} />
           </div>
         </section>
+        
+        <ModelMethodology />
       </div>
     </main>
   );
