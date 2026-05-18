@@ -18,6 +18,265 @@ import { runMonteCarloSimulation } from "@/lib/monteCarlo";
 import { generateBuyRentAnalysis } from "@/lib/buyRent";
 import { generateModelAudit } from "@/lib/modelAudit";
 
+const sampleProfiles = {
+  healthyInvestor: {
+    label: "Healthy Investor",
+    description: "Strong income, low debt, healthy emergency fund.",
+    values: {
+      goal: "invest_assets",
+      age: 30,
+      retirementAge: 65,
+      dependents: 0,
+      cityType: "suburban",
+      occupationStatus: "employed",
+      industry: "finance",
+
+      income: 140000,
+      monthlyExpenses: 4500,
+      savings: 35000,
+      emergencyFund: 30000,
+      stockValue: 85000,
+      bondValue: 15000,
+      realEstateValue: 0,
+
+      debtPayment: 250,
+      debtInterestRate: 5,
+      debtYearsRemaining: 3,
+      creditCardDebt: 0,
+      creditCardAPR: 0,
+
+      targetHousePrice: 0,
+      scholarshipPercent: 0,
+      expectedIncomeIncrease: 0,
+
+      monthlyRent: 0,
+      downPaymentPercent: 20,
+      mortgageRate: 6.75,
+      holdingPeriodYears: 7,
+      homeAppreciationRate: 3,
+      propertyTaxRate: 1.1,
+      maintenanceRate: 1,
+      closingCostPercent: 3,
+
+      discountRate: 6,
+      baseIncomeGrowthRate: 2.5,
+      expenseGrowthRate: 2.5,
+      expectedInvestmentReturn: 7,
+      monteCarloRuns: 3000,
+
+      riskTolerance: "risk_neutral",
+      timeHorizon: "10_20_years",
+    },
+  },
+
+  riskyHomebuyer: {
+    label: "Risky Homebuyer",
+    description: "High housing target, debt pressure, thin emergency fund.",
+    values: {
+      goal: "rent_vs_buy",
+      age: 27,
+      retirementAge: 65,
+      dependents: 1,
+      cityType: "city",
+      occupationStatus: "employed",
+      industry: "technology",
+
+      income: 115000,
+      monthlyExpenses: 6200,
+      savings: 18000,
+      emergencyFund: 7000,
+      stockValue: 22000,
+      bondValue: 2000,
+      realEstateValue: 0,
+
+      debtPayment: 950,
+      debtInterestRate: 8.5,
+      debtYearsRemaining: 6,
+      creditCardDebt: 9000,
+      creditCardAPR: 22,
+
+      targetHousePrice: 850000,
+      scholarshipPercent: 0,
+      expectedIncomeIncrease: 0,
+
+      monthlyRent: 3200,
+      downPaymentPercent: 8,
+      mortgageRate: 7.25,
+      holdingPeriodYears: 5,
+      homeAppreciationRate: 2,
+      propertyTaxRate: 1.25,
+      maintenanceRate: 1.2,
+      closingCostPercent: 3,
+
+      discountRate: 6.5,
+      baseIncomeGrowthRate: 3,
+      expenseGrowthRate: 3.2,
+      expectedInvestmentReturn: 7,
+      monteCarloRuns: 3000,
+
+      riskTolerance: "risk_neutral",
+      timeHorizon: "5_10_years",
+    },
+  },
+
+  collegeStudent: {
+    label: "College Student",
+    description: "Low income, small assets, early-stage financial profile.",
+    values: {
+      goal: "scholarship",
+      age: 20,
+      retirementAge: 65,
+      dependents: 0,
+      cityType: "city",
+      occupationStatus: "student",
+      industry: "other",
+
+      income: 18000,
+      monthlyExpenses: 1800,
+      savings: 3500,
+      emergencyFund: 1000,
+      stockValue: 1500,
+      bondValue: 0,
+      realEstateValue: 0,
+
+      debtPayment: 150,
+      debtInterestRate: 5.5,
+      debtYearsRemaining: 10,
+      creditCardDebt: 1200,
+      creditCardAPR: 19,
+
+      targetHousePrice: 0,
+      scholarshipPercent: 60,
+      expectedIncomeIncrease: 25,
+
+      monthlyRent: 0,
+      downPaymentPercent: 20,
+      mortgageRate: 6.75,
+      holdingPeriodYears: 7,
+      homeAppreciationRate: 3,
+      propertyTaxRate: 1.1,
+      maintenanceRate: 1,
+      closingCostPercent: 3,
+
+      discountRate: 6,
+      baseIncomeGrowthRate: 3,
+      expenseGrowthRate: 3,
+      expectedInvestmentReturn: 6.5,
+      monteCarloRuns: 2000,
+
+      riskTolerance: "risk_neutral",
+      timeHorizon: "10_20_years",
+    },
+  },
+
+  highDebtProfessional: {
+    label: "High-Debt Professional",
+    description: "Good income but high debt and credit card pressure.",
+    values: {
+      goal: "invest_assets",
+      age: 32,
+      retirementAge: 65,
+      dependents: 0,
+      cityType: "city",
+      occupationStatus: "employed",
+      industry: "healthcare",
+
+      income: 165000,
+      monthlyExpenses: 7200,
+      savings: 12000,
+      emergencyFund: 5000,
+      stockValue: 28000,
+      bondValue: 3000,
+      realEstateValue: 0,
+
+      debtPayment: 1800,
+      debtInterestRate: 7.5,
+      debtYearsRemaining: 8,
+      creditCardDebt: 18000,
+      creditCardAPR: 24,
+
+      targetHousePrice: 0,
+      scholarshipPercent: 0,
+      expectedIncomeIncrease: 0,
+
+      monthlyRent: 0,
+      downPaymentPercent: 20,
+      mortgageRate: 6.75,
+      holdingPeriodYears: 7,
+      homeAppreciationRate: 3,
+      propertyTaxRate: 1.1,
+      maintenanceRate: 1,
+      closingCostPercent: 3,
+
+      discountRate: 6.5,
+      baseIncomeGrowthRate: 3,
+      expenseGrowthRate: 3.5,
+      expectedInvestmentReturn: 7,
+      monteCarloRuns: 3000,
+
+      riskTolerance: "risk_averse",
+      timeHorizon: "5_10_years",
+    },
+  },
+
+  retirementPlanner: {
+    label: "Retirement Planner",
+    description: "Older user testing retirement readiness.",
+    values: {
+      goal: "retirement",
+      age: 55,
+      retirementAge: 67,
+      dependents: 0,
+      cityType: "suburban",
+      occupationStatus: "employed",
+      industry: "finance",
+
+      income: 155000,
+      monthlyExpenses: 6000,
+      savings: 90000,
+      emergencyFund: 40000,
+      stockValue: 420000,
+      bondValue: 180000,
+      realEstateValue: 350000,
+
+      debtPayment: 900,
+      debtInterestRate: 4.5,
+      debtYearsRemaining: 10,
+      creditCardDebt: 0,
+      creditCardAPR: 0,
+
+      targetHousePrice: 0,
+      scholarshipPercent: 0,
+      expectedIncomeIncrease: 0,
+
+      monthlyRent: 0,
+      downPaymentPercent: 20,
+      mortgageRate: 6.75,
+      holdingPeriodYears: 7,
+      homeAppreciationRate: 3,
+      propertyTaxRate: 1.1,
+      maintenanceRate: 1,
+      closingCostPercent: 3,
+
+      discountRate: 5.5,
+      baseIncomeGrowthRate: 2,
+      expenseGrowthRate: 2.5,
+      expectedInvestmentReturn: 5.5,
+      monteCarloRuns: 3000,
+
+      riskTolerance: "risk_averse",
+      timeHorizon: "10_20_years",
+    },
+  },
+} satisfies Record<
+  string,
+  {
+    label: string;
+    description: string;
+    values: FinancialInput;
+  }
+>;
+
 type Props = {
   onCalculate: (result: FinancialResult) => void;
 };
@@ -30,6 +289,7 @@ const totalSteps = 7;
 
 export default function FinancialForm({ onCalculate }: Props) {
   const [step, setStep] = useState(1);
+  const [showDemoProfiles, setShowDemoProfiles] = useState(false);
 
   const [draftNumbers, setDraftNumbers] = useState<
     Partial<Record<NumberFieldName, string>>
@@ -38,25 +298,32 @@ export default function FinancialForm({ onCalculate }: Props) {
   const [form, setForm] = useState<FinancialInput>({
     age: 25,
     retirementAge: 65,
+
     income: 75000,
     savings: 10000,
     emergencyFund: 5000,
+    monthlyExpenses: 3000,
+
     stockValue: 5000,
     bondValue: 0,
     realEstateValue: 0,
+
     debtPayment: 300,
     debtInterestRate: 6,
+    debtYearsRemaining: 10,
+
     creditCardDebt: 0,
     creditCardAPR: 0,
-    debtYearsRemaining: 10,
-    monthlyExpenses: 3000,
+
     dependents: 0,
     cityType: "city",
     occupationStatus: "employed",
     industry: "finance",
+
     targetHousePrice: 500000,
     scholarshipPercent: 0,
     expectedIncomeIncrease: 0,
+
     monthlyRent: 2500,
     downPaymentPercent: 20,
     mortgageRate: 6.5,
@@ -65,11 +332,13 @@ export default function FinancialForm({ onCalculate }: Props) {
     propertyTaxRate: 1.2,
     maintenanceRate: 1,
     closingCostPercent: 3,
+
     discountRate: 5,
     baseIncomeGrowthRate: 2,
     expenseGrowthRate: 2.5,
     expectedInvestmentReturn: 6,
     monteCarloRuns: 1000,
+
     riskTolerance: "risk_neutral",
     timeHorizon: "5_10_years",
     goal: "buy_house",
@@ -81,6 +350,19 @@ export default function FinancialForm({ onCalculate }: Props) {
   const labelClass = "block text-sm font-medium text-slate-300";
 
   const mutedText = "text-sm leading-6 text-slate-400";
+
+  function loadSampleProfile(profile: keyof typeof sampleProfiles) {
+    const sampleValues = sampleProfiles[profile].values;
+
+    setForm((previousForm) => ({
+      ...previousForm,
+      ...sampleValues,
+    }));
+
+    setDraftNumbers({});
+    setStep(1);
+    setShowDemoProfiles(false);
+  }
 
   function updateField(name: keyof FinancialInput, value: string) {
     setForm((prev) => ({
@@ -233,6 +515,59 @@ export default function FinancialForm({ onCalculate }: Props) {
             style={{ width: `${(step / totalSteps) * 100}%` }}
           />
         </div>
+      </div>
+
+      <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+        <button
+          type="button"
+          onClick={() => setShowDemoProfiles((prev) => !prev)}
+          className="flex w-full items-center justify-between gap-4 text-left"
+        >
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
+              Demo Profiles
+            </p>
+
+            <h3 className="mt-2 text-xl font-bold text-white">
+              Load a Sample Profile
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Use these sample users to quickly test the model during a demo.
+            </p>
+          </div>
+
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-cyan-400/30 bg-slate-950/60 text-cyan-300">
+            <span
+              className={`text-xl transition-transform duration-200 ${
+                showDemoProfiles ? "rotate-180" : ""
+              }`}
+            >
+              ↓
+            </span>
+          </div>
+        </button>
+
+        {showDemoProfiles && (
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+            {Object.entries(sampleProfiles).map(([key, profile]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() =>
+                  loadSampleProfile(key as keyof typeof sampleProfiles)
+                }
+                className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-left transition hover:border-cyan-400/40 hover:bg-cyan-400/10"
+              >
+                <p className="font-semibold text-white">{profile.label}</p>
+
+                <p className="mt-2 text-xs leading-5 text-slate-400">
+                  {profile.description}
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {step === 1 && (
