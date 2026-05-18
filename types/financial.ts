@@ -80,6 +80,20 @@ export type ScenarioComparison = {
   winner: "current" | "improved";
   summary: string;
 };
+export type SensitivityCell = {
+  discountRate: number;
+  incomeGrowthRate: number;
+  netPosition: number;
+};
+
+export type SensitivityAnalysis = {
+  discountRates: number[];
+  incomeGrowthRates: number[];
+  table: SensitivityCell[];
+  baseCase: number;
+  downsideCase: number;
+  upsideCase: number;
+};
 export type FinancialResult = {
   incomePV: number;
   assetValue: number;
@@ -90,4 +104,5 @@ export type FinancialResult = {
   score: ScoreBreakdown;
   actionPlan: string[];
   scenarioComparison: ScenarioComparison;
+  sensitivityAnalysis: SensitivityAnalysis;
 };

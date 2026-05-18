@@ -22,6 +22,9 @@ function formatCurrency(value: number): string {
     maximumFractionDigits: 0,
   }).format(value);
 }
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(0)}%`;
+}
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
@@ -223,7 +226,100 @@ export default function ResultsCard({ result }: Props) {
   <p className="text-sm uppercase tracking-[0.2em] text-blue-300">
     Scenario Comparison
   </p>
+  <div className="rounded-3xl border border-purple-400/20 bg-purple-400/10 p-5">
+  <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
+    Sensitivity Analysis
+  </p>
 
+  <p className="mt-2 text-sm leading-6 text-slate-300">
+    This table shows how net position changes under different income growth
+    and discount rate assumptions.
+  </p>
+
+  <div className="mt-4 grid gap-3 md:grid-cols-3">
+    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+        Downside Case
+      </p>
+      <p className="mt-2 text-lg font-semibold text-red-300">
+        {formatCurrency(result.sensitivityAnalysis.downsideCase)}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">1% growth / 7% discount</p>
+    </div>
+
+    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+        Base Case
+      </p>
+      <p className="mt-2 text-lg font-semibold text-cyan-300">
+        {formatCurrency(result.sensitivityAnalysis.baseCase)}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">3% growth / 5% discount</p>
+    </div>
+
+    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+        Upside Case
+      </p>
+      <p className="mt-2 text-lg font-semibold text-emerald-300">
+        {formatCurrency(result.sensitivityAnalysis.upsideCase)}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">4% growth / 4% discount</p>
+    </div>
+  </div>
+
+  <div className="mt-5 overflow-x-auto">
+    <table className="w-full min-w-[520px] border-collapse text-sm">
+      <thead>
+        <tr>
+          <th className="border border-white/10 bg-slate-950/70 p-3 text-left text-slate-400">
+            Income Growth
+          </th>
+
+          {result.sensitivityAnalysis.discountRates.map((rate) => (
+            <th
+              key={rate}
+              className="border border-white/10 bg-slate-950/70 p-3 text-right text-slate-400"
+            >
+              {formatPercent(rate)} Discount
+            </th>
+          ))}
+        </tr>
+      </thead>
+
+      <tbody>
+        {result.sensitivityAnalysis.incomeGrowthRates.map((growthRate) => (
+          <tr key={growthRate}>
+            <td className="border border-white/10 bg-slate-950/50 p-3 font-medium text-slate-300">
+              {formatPercent(growthRate)}
+            </td>
+
+            {result.sensitivityAnalysis.discountRates.map((discountRate) => {
+              const cell = result.sensitivityAnalysis.table.find(
+                (item) =>
+                  item.incomeGrowthRate === growthRate &&
+                  item.discountRate === discountRate
+              );
+
+              const value = cell?.netPosition ?? 0;
+
+              return (
+                <td
+                  key={`${growthRate}-${discountRate}`}
+                  className={`border border-white/10 bg-slate-950/40 p-3 text-right ${
+                    value >= 0 ? "text-emerald-300" : "text-red-300"
+                  }`}
+                >
+                  {formatCurrency(value)}
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</div>
   <div className="mt-4 grid gap-3 md:grid-cols-2">
     <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">

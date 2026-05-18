@@ -13,6 +13,7 @@ import { getRecommendation } from "@/lib/recommendations";
 import { calculateFinancialScore } from "@/lib/scoring";
 import { generateActionPlan } from "@/lib/actionPlan";
 import { generateScenarioComparison } from "@/lib/scenarios";
+import { generateSensitivityAnalysis } from "@/lib/sensitivity";
 
 type Props = {
   onCalculate: (result: FinancialResult) => void;
@@ -79,6 +80,7 @@ export default function FinancialForm({ onCalculate }: Props) {
 const score = calculateFinancialScore(form, netPosition, assetValue, debtPV);
 const actionPlan = generateActionPlan(form, netPosition);
 const scenarioComparison = generateScenarioComparison(form);
+const sensitivityAnalysis = generateSensitivityAnalysis(form);
 
 onCalculate({
   incomePV,
@@ -90,6 +92,7 @@ onCalculate({
   score,
   actionPlan,
   scenarioComparison,
+  sensitivityAnalysis,
 });
   }
 
