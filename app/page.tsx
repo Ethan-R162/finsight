@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import FinancialForm from "@/components/FinancialForm";
 import ResultsCard from "@/components/ResultsCard";
@@ -54,158 +55,14 @@ function FInsightLogo() {
   );
 }
 
-function ModelMethodology() {
-  const formulas = [
-    {
-      title: "Net Position",
-      formula:
-        "Net Position = Income PV + Current Assets − Debt PV − Expense PV",
-      description:
-        "This is the core output of the model. It combines future income, existing assets, liabilities, and projected expenses into one financial position estimate.",
-    },
-    {
-      title: "Income Present Value",
-      formula: "Income PV = Σ Projected Income_t / (1 + discount rate)^t",
-      description:
-        "Future income is projected forward and discounted back to today to estimate its present value.",
-    },
-    {
-      title: "Debt Present Value",
-      formula: "Debt PV = Payment × [1 − (1 + r)^−n] / r",
-      description:
-        "Debt payments are discounted using a loan present value formula so liabilities can be compared against assets and income.",
-    },
-    {
-      title: "Financial Readiness Score",
-      formula:
-        "Score = Emergency Fund + Debt Health + Asset Strength + Goal Fit",
-      description:
-        "The score converts the model output into a 100-point readiness measure across four financial categories.",
-    },
-  ];
-
-  const assumptions = [
-    "Default discount rate: 5%, adjustable by the user",
-    "Default base income growth: 2%, adjustable by the user",
-    "Default expense growth / inflation rate: 2.5%, adjustable by the user",
-    "Default expected investment return: 6%, adjustable by the user",
-    "Default Monte Carlo simulation count: 1,000 trials, adjustable by the user",
-    "Emergency fund target: at least 3 months of expenses",
-    "High-interest credit card debt threshold: 15% APR",
-    "Sensitivity analysis is built around the user's selected discount rate and income growth assumptions",
-    "Monte Carlo simulation randomizes income growth, discount rate, investment return, and expense growth",
-  ];
-
-  const limitations = [
-    "The model does not include taxes.",
-    "The model does not use live market, mortgage, or inflation data.",
-    "The model uses simplified assumptions for educational purposes.",
-    "The model does not replace a financial advisor.",
-    "The model does not provide legal, tax, investment, or financial advice.",
-  ];
-
+function MethodologyButton() {
   return (
-    <section className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur">
-      <div className="mb-8">
-        <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">
-          Model Documentation
-        </p>
-        <h2 className="mt-2 text-3xl font-bold text-white">
-          Model Methodology
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-          FInsight is built as a financial modeling tool that converts user
-          inputs into present value estimates, stress-tests assumptions, and
-          generates a recommendation based on net position, risk tolerance, time
-          horizon, and goal fit. The model also includes user-adjustable
-          assumptions for discount rate, income growth, expense growth, expected
-          investment return, and Monte Carlo simulation count.
-        </p>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
-        {formulas.map((item) => (
-          <div
-            key={item.title}
-            className="rounded-2xl border border-white/10 bg-slate-950/60 p-5"
-          >
-            <p className="text-sm font-semibold text-cyan-300">
-              {item.title}
-            </p>
-            <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 font-mono text-sm text-emerald-300">
-              {item.formula}
-            </p>
-            <p className="mt-3 text-sm leading-6 text-slate-400">
-              {item.description}
-            </p>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <div className="rounded-2xl border border-blue-400/20 bg-blue-400/10 p-5">
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-300">
-            Key Assumptions
-          </p>
-
-          <div className="mt-4 space-y-3">
-            {assumptions.map((assumption) => (
-              <div
-                key={assumption}
-                className="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-sm text-slate-200"
-              >
-                {assumption}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-orange-400/20 bg-orange-400/10 p-5">
-          <p className="text-sm uppercase tracking-[0.2em] text-orange-300">
-            Model Limitations
-          </p>
-
-          <div className="mt-4 space-y-3">
-            {limitations.map((limitation) => (
-              <div
-                key={limitation}
-                className="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-sm text-slate-200"
-              >
-                {limitation}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-6 rounded-2xl border border-purple-400/20 bg-purple-400/10 p-5">
-        <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
-          Advanced Modeling Features
-        </p>
-
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
-            <p className="font-semibold text-white">Sensitivity Analysis</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              The model tests how net position changes around the user's
-              selected income growth and discount rate assumptions. This shows
-              how sensitive the recommendation is to changes in core financial
-              assumptions.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
-            <p className="font-semibold text-white">Monte Carlo Simulation</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              The model runs a user-selected number of randomized simulations by
-              changing income growth, discount rate, investment return, and
-              expense growth. The output shows probability of positive net
-              position, downside case, median case, and upside case.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <Link
+      href="/methodology"
+      className="inline-flex items-center justify-center rounded-xl border border-cyan-400/30 bg-slate-950/60 px-5 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
+    >
+      View Methodology
+    </Link>
   );
 }
 
@@ -238,6 +95,10 @@ function InputLandingPage({
             Current model
           </p>
 
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Present value logic, risk testing, and goal-based decision rules.
+          </p>
+
           <div className="mt-4 grid grid-cols-3 gap-3">
             <div className="rounded-2xl bg-slate-950/70 p-4">
               <p className="text-2xl font-bold text-cyan-300">PV</p>
@@ -262,8 +123,6 @@ function InputLandingPage({
           <FinancialForm onCalculate={onCalculate} />
         </div>
       </section>
-
-      <ModelMethodology />
     </>
   );
 }
@@ -287,9 +146,11 @@ function DashboardPage({
               <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">
                 FInsight Dashboard
               </p>
+
               <h2 className="mt-2 text-4xl font-bold tracking-tight text-white">
                 Financial Model Results
               </h2>
+
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
                 Your intake has been converted into a dashboard with present
                 value outputs, recommendation logic, scenario analysis, Monte
@@ -298,13 +159,17 @@ function DashboardPage({
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={onReset}
-              className="rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.09]"
-            >
-              Back to Edit Inputs
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <MethodologyButton />
+
+              <button
+                type="button"
+                onClick={onReset}
+                className="rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.09]"
+              >
+                Back to Edit Inputs
+              </button>
+            </div>
           </div>
 
           <div
@@ -365,8 +230,6 @@ function DashboardPage({
       <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-1 shadow-2xl backdrop-blur">
         <ResultsCard result={result} onReset={onReset} />
       </section>
-
-      <ModelMethodology />
     </>
   );
 }
@@ -381,11 +244,20 @@ export default function Home() {
       <div className="absolute bottom-0 left-1/2 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-6 py-8">
-        <nav className="mb-12 flex items-center justify-between">
+        <nav className="mb-12 flex items-center justify-between gap-4">
           <FInsightLogo />
 
-          <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 backdrop-blur md:block">
-            AI-Powered Financial Modeling Engine
+          <div className="flex items-center gap-3">
+            <Link
+              href="/methodology"
+              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:bg-white/10"
+            >
+              Methodology
+            </Link>
+
+            <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 backdrop-blur md:block">
+              AI-Powered Financial Modeling Engine
+            </div>
           </div>
         </nav>
 
