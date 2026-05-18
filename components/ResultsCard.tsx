@@ -9,7 +9,7 @@ import {
   YAxis,
 } from "recharts";
 import { FinancialResult } from "@/types/financial";
-import { downloadTextReport } from "@/lib/report";
+import { downloadPDFReport } from "@/lib/report";
 
 type Props = {
   result: FinancialResult | null;
@@ -524,10 +524,10 @@ export default function ResultsCard({ result }: Props) {
 
       <button
         type="button"
-        onClick={() => downloadTextReport(result)}
+        onClick={() => downloadPDFReport(result)}
         className="w-full rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 p-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01]"
       >
-        Download Report
+        Download PDF Report
       </button>
 
       <p className="text-xs leading-5 text-slate-500">
