@@ -15,6 +15,7 @@ import { generateActionPlan } from "@/lib/actionPlan";
 import { generateScenarioComparison } from "@/lib/scenarios";
 import { generateSensitivityAnalysis } from "@/lib/sensitivity";
 import { runMonteCarloSimulation } from "@/lib/monteCarlo";
+import { generateBuyRentAnalysis } from "@/lib/buyRent";
 
 type Props = {
   onCalculate: (result: FinancialResult) => void;
@@ -47,6 +48,14 @@ export default function FinancialForm({ onCalculate }: Props) {
     targetHousePrice: 500000,
     scholarshipPercent: 0,
     expectedIncomeIncrease: 0,
+    monthlyRent: 2500,
+    downPaymentPercent: 20,
+    mortgageRate: 6.5,
+    holdingPeriodYears: 7,
+    homeAppreciationRate: 3,
+    propertyTaxRate: 1.2,
+    maintenanceRate: 1,
+    closingCostPercent: 3,
     discountRate: 5,
     baseIncomeGrowthRate: 2,
     expenseGrowthRate: 2.5,
@@ -88,6 +97,7 @@ export default function FinancialForm({ onCalculate }: Props) {
     const scenarioComparison = generateScenarioComparison(form);
     const sensitivityAnalysis = generateSensitivityAnalysis(form);
     const monteCarloResult = runMonteCarloSimulation(form);
+    const buyRentAnalysis = generateBuyRentAnalysis(form);
     
     onCalculate({
       incomePV,
@@ -101,6 +111,7 @@ export default function FinancialForm({ onCalculate }: Props) {
       scenarioComparison,
       sensitivityAnalysis,
       monteCarloResult,
+      buyRentAnalysis,
     });
   }
 
@@ -160,18 +171,116 @@ export default function FinancialForm({ onCalculate }: Props) {
           </div>
 
           {(form.goal === "buy_house" || form.goal === "rent_vs_buy") && (
-            <div>
-              <label className={labelClass}>Target House Price</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.targetHousePrice}
-                onChange={(e) =>
-                  updateField("targetHousePrice", e.target.value)
-                }
-              />
-            </div>
-          )}
+  <div className="space-y-4 rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4">
+    <div>
+      <p className="text-sm font-semibold text-blue-300">
+        Buy vs Rent NPV Inputs
+      </p>
+      <p className="mt-1 text-xs leading-5 text-slate-400">
+        These inputs are used to compare the present value cost of renting
+        versus buying.
+      </p>
+    </div>
+
+    <div className="grid gap-4 md:grid-cols-2">
+      <div>
+        <label className={labelClass}>Target House Price</label>
+        <input
+          className={inputClass}
+          type="number"
+          value={form.targetHousePrice}
+          onChange={(e) => updateField("targetHousePrice", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Monthly Rent</label>
+        <input
+          className={inputClass}
+          type="number"
+          value={form.monthlyRent}
+          onChange={(e) => updateField("monthlyRent", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Down Payment (%)</label>
+        <input
+          className={inputClass}
+          type="number"
+          step="0.1"
+          value={form.downPaymentPercent}
+          onChange={(e) => updateField("downPaymentPercent", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Mortgage Rate (%)</label>
+        <input
+          className={inputClass}
+          type="number"
+          step="0.1"
+          value={form.mortgageRate}
+          onChange={(e) => updateField("mortgageRate", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Holding Period Years</label>
+        <input
+          className={inputClass}
+          type="number"
+          value={form.holdingPeriodYears}
+          onChange={(e) => updateField("holdingPeriodYears", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Home Appreciation (%)</label>
+        <input
+          className={inputClass}
+          type="number"
+          step="0.1"
+          value={form.homeAppreciationRate}
+          onChange={(e) => updateField("homeAppreciationRate", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Property Tax (%)</label>
+        <input
+          className={inputClass}
+          type="number"
+          step="0.1"
+          value={form.propertyTaxRate}
+          onChange={(e) => updateField("propertyTaxRate", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Maintenance (% of Home Value)</label>
+        <input
+          className={inputClass}
+          type="number"
+          step="0.1"
+          value={form.maintenanceRate}
+          onChange={(e) => updateField("maintenanceRate", e.target.value)}
+        />
+      </div>
+
+      <div>
+        <label className={labelClass}>Closing Costs (%)</label>
+        <input
+          className={inputClass}
+          type="number"
+          step="0.1"
+          value={form.closingCostPercent}
+          onChange={(e) => updateField("closingCostPercent", e.target.value)}
+        />
+      </div>
+    </div>
+  </div>
+)}
 
           {form.goal === "scholarship" && (
             <div className="grid gap-4 md:grid-cols-2">
@@ -524,106 +633,6 @@ export default function FinancialForm({ onCalculate }: Props) {
               After clicking calculate, the app will estimate your income PV,
               asset value, debt PV, expense PV, net position, and
               recommendation.
-            </p>
-          </div>
-        </section>
-      )}
-            {step === 7 && (
-        <section className="space-y-5">
-          <div>
-            <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">
-              Model Controls
-            </p>
-            <h2 className="mt-2 text-2xl font-bold">Model assumptions</h2>
-            <p className={mutedText}>
-              Adjust the core assumptions used in the present value model,
-              sensitivity analysis, and Monte Carlo simulation.
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className={labelClass}>Discount Rate (%)</label>
-              <input
-                className={inputClass}
-                type="number"
-                step="0.1"
-                value={form.discountRate}
-                onChange={(e) => updateField("discountRate", e.target.value)}
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Used to discount future income and expenses.
-              </p>
-            </div>
-
-            <div>
-              <label className={labelClass}>Base Income Growth (%)</label>
-              <input
-                className={inputClass}
-                type="number"
-                step="0.1"
-                value={form.baseIncomeGrowthRate}
-                onChange={(e) =>
-                  updateField("baseIncomeGrowthRate", e.target.value)
-                }
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Added to the industry growth adjustment.
-              </p>
-            </div>
-
-            <div>
-              <label className={labelClass}>Expense Growth / Inflation (%)</label>
-              <input
-                className={inputClass}
-                type="number"
-                step="0.1"
-                value={form.expenseGrowthRate}
-                onChange={(e) =>
-                  updateField("expenseGrowthRate", e.target.value)
-                }
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Used in the Monte Carlo expense projection.
-              </p>
-            </div>
-
-            <div>
-              <label className={labelClass}>Expected Investment Return (%)</label>
-              <input
-                className={inputClass}
-                type="number"
-                step="0.1"
-                value={form.expectedInvestmentReturn}
-                onChange={(e) =>
-                  updateField("expectedInvestmentReturn", e.target.value)
-                }
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Used to simulate asset growth.
-              </p>
-            </div>
-
-            <div>
-              <label className={labelClass}>Monte Carlo Simulations</label>
-              <input
-                className={inputClass}
-                type="number"
-                step="100"
-                value={form.monteCarloRuns}
-                onChange={(e) => updateField("monteCarloRuns", e.target.value)}
-              />
-              <p className="mt-1 text-xs text-slate-500">
-                Recommended: 1,000. Maximum used by model: 10,000.
-              </p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-purple-400/20 bg-purple-400/10 p-4 text-sm leading-6 text-purple-100">
-            <p>
-              These assumptions flow through the model calculations, stress
-              testing, and simulation outputs. This makes the model more
-              transparent and easier to defend.
             </p>
           </div>
         </section>

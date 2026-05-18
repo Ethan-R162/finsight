@@ -61,6 +61,15 @@ export type FinancialInput = {
   scholarshipPercent: number;
   expectedIncomeIncrease: number;
 
+  monthlyRent: number;
+  downPaymentPercent: number;
+  mortgageRate: number;
+  holdingPeriodYears: number;
+  homeAppreciationRate: number;
+  propertyTaxRate: number;
+  maintenanceRate: number;
+  closingCostPercent: number;
+
   discountRate: number;
   baseIncomeGrowthRate: number;
   expenseGrowthRate: number;
@@ -110,6 +119,13 @@ export type MonteCarloResult = {
   worstCase: number;
   bestCase: number;
 };
+export type BuyRentAnalysis = {
+  rentPV: number;
+  buyPV: number;
+  difference: number;
+  recommendation: "rent" | "buy";
+  summary: string;
+};
 export type FinancialResult = {
   incomePV: number;
   assetValue: number;
@@ -122,4 +138,5 @@ export type FinancialResult = {
   scenarioComparison: ScenarioComparison;
   sensitivityAnalysis: SensitivityAnalysis;
   monteCarloResult: MonteCarloResult;
+  buyRentAnalysis: BuyRentAnalysis;
 };

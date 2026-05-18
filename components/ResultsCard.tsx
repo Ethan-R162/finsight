@@ -262,7 +262,65 @@ export default function ResultsCard({ result }: Props) {
           </p>
         </div>
       </div>
+      <div className="rounded-3xl border border-teal-400/20 bg-teal-400/10 p-5">
+  <p className="text-sm uppercase tracking-[0.2em] text-teal-300">
+    Buy vs Rent NPV Model
+  </p>
 
+  <p className="mt-2 text-sm leading-6 text-slate-300">
+    This model compares the present value cost of renting versus buying over the
+    selected holding period.
+  </p>
+
+  <div className="mt-4 grid gap-3 md:grid-cols-2">
+    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+        PV Cost of Renting
+      </p>
+      <p className="mt-2 text-xl font-semibold text-white">
+        {formatCurrency(result.buyRentAnalysis.rentPV)}
+      </p>
+    </div>
+
+    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+        PV Cost of Buying
+      </p>
+      <p className="mt-2 text-xl font-semibold text-white">
+        {formatCurrency(result.buyRentAnalysis.buyPV)}
+      </p>
+    </div>
+  </div>
+
+  <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+      NPV Difference
+    </p>
+
+    <p
+      className={`mt-2 text-3xl font-bold ${
+        result.buyRentAnalysis.recommendation === "buy"
+          ? "text-emerald-300"
+          : "text-cyan-300"
+      }`}
+    >
+      {formatCurrency(result.buyRentAnalysis.difference)}
+    </p>
+
+    <p className="mt-3 text-sm leading-6 text-slate-300">
+      {result.buyRentAnalysis.summary}
+    </p>
+
+    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+      <p className="text-sm text-slate-300">
+        Model recommendation:{" "}
+        <span className="font-semibold uppercase text-teal-300">
+          {result.buyRentAnalysis.recommendation}
+        </span>
+      </p>
+    </div>
+  </div>
+</div>
       <div className="rounded-3xl border border-purple-400/20 bg-purple-400/10 p-5">
         <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
           Sensitivity Analysis

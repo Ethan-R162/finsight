@@ -64,6 +64,16 @@ Difference: ${formatCurrency(result.scenarioComparison.difference)}
 
 ${result.scenarioComparison.summary}
 ----------------------------------------
+BUY VS RENT NPV MODEL
+----------------------------------------
+
+PV Cost of Renting: ${formatCurrency(result.buyRentAnalysis.rentPV)}
+PV Cost of Buying: ${formatCurrency(result.buyRentAnalysis.buyPV)}
+NPV Difference: ${formatCurrency(result.buyRentAnalysis.difference)}
+Recommendation: ${result.buyRentAnalysis.recommendation.toUpperCase()}
+
+${result.buyRentAnalysis.summary}
+----------------------------------------
 MONTE CARLO SIMULATION
 ----------------------------------------
 
