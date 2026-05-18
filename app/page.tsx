@@ -160,8 +160,7 @@ function DashboardPage({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <MethodologyButton />
-
+              
               <button
                 type="button"
                 onClick={onReset}

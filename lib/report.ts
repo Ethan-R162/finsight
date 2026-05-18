@@ -13,27 +13,26 @@ function formatPercent(value: number): string {
   return `${(value * 100).toFixed(0)}%`;
 }
 
-function formatAuditStatus(status: string): string {
-  if (status === "healthy") return "Healthy";
+function formatGoalStatus(status: string): string {
+  if (status === "strong") return "Strong";
   if (status === "watch") return "Watch";
   return "Risky";
 }
 
-function shouldShowHousingData(result: FinancialResult): boolean {
-  return result.goal === "buy_house" || result.goal === "rent_vs_buy";
+function addPageBackground(doc: jsPDF) {
+  doc.setFillColor(7, 17, 31);
+  doc.rect(0, 0, 210, 297, "F");
 }
 
-function addWrappedText(
-  doc: jsPDF,
-  text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight = 6
-): number {
-  const lines = doc.splitTextToSize(text, maxWidth);
-  doc.text(lines, x, y);
-  return y + lines.length * lineHeight;
+function addFooter(doc: jsPDF) {
+  doc.setDrawColor(30, 41, 59);
+  doc.setLineWidth(0.25);
+  doc.line(14, 282, 196, 282);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(148, 163, 184);
+  doc.text("FInsight Financial Modeling Report", 14, 287);
 }
 
 function checkPageBreak(doc: jsPDF, y: number, neededSpace = 30): number {
@@ -47,20 +46,17 @@ function checkPageBreak(doc: jsPDF, y: number, neededSpace = 30): number {
   return y;
 }
 
-function addPageBackground(doc: jsPDF) {
-  doc.setFillColor(7, 17, 31);
-  doc.rect(0, 0, 210, 297, "F");
-}
-
-function addFooter(doc: jsPDF) {
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(148, 163, 184);
-  doc.text(
-    "FInsight is for educational purposes only and does not provide financial, investment, tax, or legal advice.",
-    14,
-    287
-  );
+function addWrappedText(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight = 5
+): number {
+  const lines = doc.splitTextToSize(text, maxWidth);
+  doc.text(lines, x, y);
+  return y + lines.length * lineHeight;
 }
 
 function addSectionTitle(doc: jsPDF, title: string, y: number): number {
@@ -96,9 +92,11 @@ function addMetricCard(
   doc.text(label.toUpperCase(), x + 4, y + 8);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setTextColor(255, 255, 255);
-  doc.text(value, x + 4, y + 18);
+
+  const valueLines = doc.splitTextToSize(value, width - 8);
+  doc.text(valueLines.slice(0, 1), x + 4, y + 18);
 }
 
 function addKeyValue(
@@ -108,7 +106,7 @@ function addKeyValue(
   x: number,
   y: number
 ): number {
-  y = checkPageBreak(doc, y, 12);
+  y = checkPageBreak(doc, y, 10);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -117,9 +115,11 @@ function addKeyValue(
 
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
-  doc.text(value, x + 72, y);
 
-  return y + 7;
+  const valueLines = doc.splitTextToSize(value, 92);
+  doc.text(valueLines, x + 72, y);
+
+  return y + Math.max(7, valueLines.length * 5);
 }
 
 function addBulletList(
@@ -131,45 +131,51 @@ function addBulletList(
 ): number {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(226, 232, 240);
 
   for (const item of items) {
     y = checkPageBreak(doc, y, 16);
 
     doc.setTextColor(34, 211, 238);
-    doc.text("•", x, y);
+    doc.text("-", x, y);
 
     doc.setTextColor(226, 232, 240);
+
     const lines = doc.splitTextToSize(item, maxWidth);
     doc.text(lines, x + 5, y);
+
     y += lines.length * 5 + 3;
   }
 
   return y;
 }
 
-export function downloadPDFReport(result: FinancialResult) {
-  const showHousingData = shouldShowHousingData(result);
-  const doc = new jsPDF("p", "mm", "a4");
-
-  addPageBackground(doc);
-
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(26);
-  doc.setTextColor(255, 255, 255);
-  doc.text("FInsight", 14, 24);
-
-  doc.setFontSize(10);
-  doc.setTextColor(34, 211, 238);
-  doc.text("FINANCIAL MODELING REPORT", 14, 32);
+function addParagraph(
+  doc: jsPDF,
+  text: string,
+  y: number,
+  maxWidth = 182
+): number {
+  y = checkPageBreak(doc, y, 20);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(148, 163, 184);
-  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 150, 24);
+  doc.setTextColor(226, 232, 240);
 
-  // Hero score
+  return addWrappedText(doc, text, 14, y, maxWidth, 5);
+}
+
+function addSmallHeader(doc: jsPDF, text: string, y: number): number {
+  y = checkPageBreak(doc, y, 14);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.text(text, 14, y);
+
+  return y + 7;
+}
+
+function addScoreHero(doc: jsPDF, result: FinancialResult) {
   doc.setFillColor(15, 23, 42);
   doc.setDrawColor(30, 41, 59);
   doc.roundedRect(14, 42, 182, 42, 5, 5, "FD");
@@ -195,20 +201,50 @@ export function downloadPDFReport(result: FinancialResult) {
   const scoreDescription =
     "A directional readiness score based on emergency fund, debt health, asset strength, and goal fit.";
 
-  const scoreDescriptionLines = doc.splitTextToSize(scoreDescription, 100);
-  doc.text(scoreDescriptionLines, 80, 58);
+  const scoreDescriptionLines = doc.splitTextToSize(scoreDescription, 92);
+
+  doc.text(scoreDescriptionLines, 80, 58, {
+    lineHeightFactor: 1.4,
+  });
 
   doc.setFillColor(30, 41, 59);
-  doc.rect(80, 70, 100, 4, "F");
+  doc.rect(80, 72, 92, 4, "F");
 
   doc.setFillColor(34, 211, 238);
-  doc.rect(80, 70, Math.max(4, result.score.totalScore), 4, "F");
+  doc.rect(
+    80,
+    72,
+    Math.max(4, Math.min(92, (result.score.totalScore / 100) * 92)),
+    4,
+    "F"
+  );
+}
 
+export function downloadPDFReport(result: FinancialResult) {
+  const doc = new jsPDF("p", "mm", "a4");
+  const goalAnalysis = result.goalAnalysis;
+
+  addPageBackground(doc);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(26);
+  doc.setTextColor(255, 255, 255);
+  doc.text("FInsight", 14, 24);
+
+  doc.setFontSize(10);
+  doc.setTextColor(34, 211, 238);
+  doc.text("FINANCIAL MODELING REPORT", 14, 32);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(148, 163, 184);
+  doc.text(`Generated: ${new Date().toLocaleDateString()}`, 150, 24);
+
+  addScoreHero(doc, result);
   addFooter(doc);
 
   let y = 98;
 
-  // Financial snapshot
   y = addSectionTitle(doc, "Financial Snapshot", y);
 
   addMetricCard(doc, "Income PV", formatCurrency(result.incomePV), 14, y);
@@ -222,13 +258,22 @@ export function downloadPDFReport(result: FinancialResult) {
   y += 34;
 
   y = checkPageBreak(doc, y, 28);
-  doc.setFillColor(6, 78, 59);
-  doc.setDrawColor(16, 185, 129);
+
+  doc.setFillColor(
+    result.netPosition >= 0 ? 6 : 127,
+    result.netPosition >= 0 ? 78 : 29,
+    result.netPosition >= 0 ? 59 : 29
+  );
+  doc.setDrawColor(
+    result.netPosition >= 0 ? 16 : 248,
+    result.netPosition >= 0 ? 185 : 113,
+    result.netPosition >= 0 ? 129 : 113
+  );
   doc.roundedRect(14, y, 182, 28, 4, 4, "FD");
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
-  doc.setTextColor(209, 250, 229);
+  doc.setTextColor(226, 232, 240);
   doc.text("Net Position", 22, y + 10);
 
   doc.setFont("helvetica", "bold");
@@ -238,7 +283,6 @@ export function downloadPDFReport(result: FinancialResult) {
 
   y += 42;
 
-  // Score breakdown
   y = addSectionTitle(doc, "Score Breakdown", y);
 
   y = addKeyValue(
@@ -272,7 +316,96 @@ export function downloadPDFReport(result: FinancialResult) {
 
   y += 8;
 
-  // Recommendation
+  y = addSectionTitle(doc, "Goal-Specific Model", y);
+
+  y = addKeyValue(doc, "Goal Model", goalAnalysis.title, 14, y);
+  y = addKeyValue(
+    doc,
+    "Goal Status",
+    formatGoalStatus(goalAnalysis.status),
+    14,
+    y
+  );
+  y = addKeyValue(
+    doc,
+    "Goal Score",
+    `${goalAnalysis.goalScore} / 100`,
+    14,
+    y
+  );
+  y = addKeyValue(
+    doc,
+    "Margin of Safety",
+    goalAnalysis.marginOfSafety,
+    14,
+    y
+  );
+
+  y += 4;
+  y = addParagraph(doc, goalAnalysis.summary, y);
+  y += 4;
+  y = addParagraph(doc, goalAnalysis.recommendationImpact, y);
+  y += 6;
+
+  y = addSmallHeader(doc, "Goal Metrics", y);
+
+  for (const metric of goalAnalysis.metrics) {
+    y = addKeyValue(doc, metric.label, metric.value, 14, y);
+
+    if (metric.detail) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(148, 163, 184);
+      y = addWrappedText(doc, metric.detail, 22, y, 160, 4);
+      y += 2;
+    }
+  }
+
+  y += 4;
+  y = addSmallHeader(doc, "Goal Score Drivers", y);
+
+  for (const driver of goalAnalysis.scoreDrivers) {
+    const impact =
+      driver.impact > 0 ? `+${driver.impact}` : `${driver.impact}`;
+
+    y = addKeyValue(doc, driver.label, impact, 14, y);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(203, 213, 225);
+    y = addWrappedText(doc, driver.explanation, 22, y, 160, 4);
+    y += 2;
+  }
+
+  y += 4;
+  y = addSmallHeader(doc, "Conservative / Base / Optimistic Cases", y);
+
+  for (const scenario of goalAnalysis.scenarios) {
+    y = checkPageBreak(doc, y, 35);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(34, 211, 238);
+    doc.text(
+      `${scenario.name} Case - ${scenario.goalScore}/100 - ${formatGoalStatus(
+        scenario.status
+      )}`,
+      14,
+      y
+    );
+    y += 6;
+
+    y = addParagraph(doc, scenario.summary, y);
+
+    for (const metric of scenario.metrics) {
+      y = addKeyValue(doc, metric.label, metric.value, 22, y);
+    }
+
+    y += 3;
+  }
+
+  y += 4;
+
   y = addSectionTitle(doc, "Recommendation", y);
 
   doc.setFont("helvetica", "normal");
@@ -281,13 +414,10 @@ export function downloadPDFReport(result: FinancialResult) {
   y = addWrappedText(doc, result.recommendation, 14, y, 182, 6);
   y += 6;
 
-  // Action plan
   y = addSectionTitle(doc, "Priority Action Plan", y);
-
   y = addBulletList(doc, result.actionPlan, 14, y, 175);
   y += 4;
 
-  // Scenario comparison
   y = addSectionTitle(doc, "Scenario Comparison", y);
 
   y = addKeyValue(
@@ -313,56 +443,9 @@ export function downloadPDFReport(result: FinancialResult) {
   );
 
   y += 4;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(226, 232, 240);
-  y = addWrappedText(doc, result.scenarioComparison.summary, 14, y, 182, 5);
+  y = addParagraph(doc, result.scenarioComparison.summary, y);
   y += 6;
 
-  // Buy vs Rent only for housing goals
-  if (showHousingData) {
-    y = addSectionTitle(doc, "Buy vs Rent NPV Model", y);
-
-    y = addKeyValue(
-      doc,
-      "PV Cost of Renting",
-      formatCurrency(result.buyRentAnalysis.rentPV),
-      14,
-      y
-    );
-    y = addKeyValue(
-      doc,
-      "PV Cost of Buying",
-      formatCurrency(result.buyRentAnalysis.buyPV),
-      14,
-      y
-    );
-    y = addKeyValue(
-      doc,
-      "NPV Difference",
-      formatCurrency(result.buyRentAnalysis.difference),
-      14,
-      y
-    );
-    y = addKeyValue(
-      doc,
-      "Model Recommendation",
-      result.buyRentAnalysis.recommendation.toUpperCase(),
-      14,
-      y
-    );
-
-    y += 4;
-
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(226, 232, 240);
-    y = addWrappedText(doc, result.buyRentAnalysis.summary, 14, y, 182, 5);
-    y += 6;
-  }
-
-  // Sensitivity
   y = addSectionTitle(doc, "Sensitivity Analysis", y);
 
   y = addKeyValue(
@@ -388,27 +471,19 @@ export function downloadPDFReport(result: FinancialResult) {
   );
 
   y += 4;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(226, 232, 240);
-  y = addWrappedText(
+  y = addParagraph(
     doc,
-    "Sensitivity analysis tests net position around the user's selected discount rate and normalized income growth assumptions. The base case is designed to match the main model output.",
-    14,
-    y,
-    182,
-    5
+    "Sensitivity analysis tests net position around the user's selected income growth and discount rate assumptions. This shows how sensitive the result is to changes in core financial assumptions.",
+    y
   );
   y += 6;
 
-  // Monte Carlo
   y = addSectionTitle(doc, "Monte Carlo Simulation", y);
 
   y = addKeyValue(
     doc,
-    "Simulations Run",
-    `${result.monteCarloResult.simulations}`,
+    "Simulations",
+    result.monteCarloResult.simulations.toLocaleString(),
     14,
     y
   );
@@ -464,167 +539,147 @@ export function downloadPDFReport(result: FinancialResult) {
 
   y += 6;
 
-  // User-selected assumptions
-  y = addSectionTitle(doc, "User-Selected Model Assumptions", y);
-
-  y = addKeyValue(
-    doc,
-    "Discount Rate",
-    `${result.modelAssumptions.discountRate}%`,
-    14,
-    y
-  );
-  y = addKeyValue(
-    doc,
-    "Base Income Growth",
-    `${result.modelAssumptions.baseIncomeGrowthRate}%`,
-    14,
-    y
-  );
-  y = addKeyValue(
-    doc,
-    "Expense Growth / Inflation",
-    `${result.modelAssumptions.expenseGrowthRate}%`,
-    14,
-    y
-  );
-  y = addKeyValue(
-    doc,
-    "Expected Investment Return",
-    `${result.modelAssumptions.expectedInvestmentReturn}%`,
-    14,
-    y
-  );
-  y = addKeyValue(
-    doc,
-    "Monte Carlo Runs",
-    result.modelAssumptions.monteCarloRuns.toLocaleString(),
-    14,
-    y
-  );
-
-  y += 6;
-
-  // Model audit
   y = addSectionTitle(doc, "Model Audit", y);
 
   y = addKeyValue(
     doc,
     "Overall Status",
-    formatAuditStatus(result.modelAudit.overallStatus),
+    result.modelAudit.overallStatus.toUpperCase(),
     14,
     y
   );
 
+  y += 3;
+
+  for (const item of result.modelAudit.items) {
+    y = checkPageBreak(doc, y, 20);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`${item.title} (${item.severity})`, 14, y);
+    y += 5;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(203, 213, 225);
+    y = addWrappedText(doc, item.message, 18, y, 170, 4);
+    y += 3;
+  }
+
   y += 4;
 
-  const auditItems = result.modelAudit.items.map(
-    (item) =>
-      `${item.severity.toUpperCase()}: ${item.title} - ${item.message}`
-  );
-
-  y = addBulletList(doc, auditItems, 14, y, 175);
-  y += 4;
-
-  // Methodology
   y = addSectionTitle(doc, "Model Methodology", y);
 
   const methodology = [
-    "Net Position = Income PV + Current Assets - Debt PV - Expense PV.",
-    "Income PV discounts projected future income back to present value using the user's selected discount rate.",
-    "Future income is based on the user's base income growth assumption plus an industry growth baseline.",
-    "Income growth is softly normalized. Growth up to 5% is used directly, while growth above 5% keeps only 35% of the excess growth above 5%.",
-    "Soft normalization allows high-growth careers to retain upside while preventing short-term growth assumptions from being projected unrealistically across an entire career.",
-    "Expense PV projects annual expenses using the user's expense growth assumption and discounts those expenses back to present value.",
-    "Debt PV uses the annuity present value formula for recurring debt payments, while credit card debt is added directly as an immediate obligation.",
-    "Sensitivity analysis varies income growth and discount rate assumptions around the user's selected inputs.",
-    "Monte Carlo simulation randomizes income growth, discount rate, investment return, and expense growth to estimate downside, median, and upside outcomes.",
-    ...(showHousingData
-      ? [
-          "Buy vs Rent NPV compares the present value cost of renting versus buying over the selected holding period.",
-        ]
-      : []),
+    "Core Net Position = Income PV + Current Assets - Debt PV - Expense PV.",
+    "Income PV discounts projected future income back to present value.",
+    "Debt PV uses the annuity present value formula for recurring debt payments.",
+    "Expense PV discounts projected future expenses back to present value.",
+    "The final readiness score includes emergency fund, debt health, asset strength, and goal fit.",
+    "Goal Fit is generated by the selected goal-specific model and converted from a 0-100 goal score into a 25-point score component.",
+    "Each goal model includes metrics, score drivers, margin of safety, and conservative/base/optimistic cases.",
+    "Sensitivity analysis varies income growth and discount rate assumptions.",
+    "Monte Carlo simulation randomizes income growth, discount rate, investment return, and expense growth.",
   ];
 
   y = addBulletList(doc, methodology, 14, y, 175);
   y += 4;
 
-  y = addSectionTitle(doc, "Key Assumptions", y);
+  y = addSectionTitle(doc, "Goal Model Methodology", y);
+
+  const goalMethodology = [
+    "Buy House: evaluates down payment gap, monthly housing cost, housing cost divided by income, debt-to-income ratio, home price divided by income, and housing margin of safety.",
+    "Rent vs Buy: compares the present value cost of renting versus buying over the holding period and measures the NPV difference.",
+    "Retirement: estimates projected assets at retirement, projected annual expenses, retirement need, retirement gap, and coverage ratio.",
+    "Invest Assets: evaluates emergency fund gap, high-interest debt, investable assets, monthly surplus, risk tolerance, time horizon, and directional allocation logic.",
+    "Scholarship ROI: estimates scholarship value, net education cost, annual income benefit, present value of income benefit, education NPV, payback period, and ROI.",
+  ];
+
+  y = addBulletList(doc, goalMethodology, 14, y, 175);
+  y += 4;
+
+  y = addSectionTitle(doc, "Default Model Assumptions", y);
 
   const assumptions = [
-    "Discount rate: user-selected rate used to convert future cash flows into present value.",
-    "Base income growth: user-selected growth rate combined with an industry growth baseline.",
-    "Income growth normalization: growth up to 5% is used directly; growth above 5% is softened by keeping 35% of the excess growth.",
-    "Expense growth: user-selected rate used to project annual expenses over time.",
-    "Expected investment return: user-selected return used in Monte Carlo simulations for invested assets.",
-    "Monte Carlo simulation count: user-selected number of randomized trials, limited between 100 and 10,000 runs.",
-    "Emergency fund target: at least 3 months of expenses.",
-    "High-interest credit card debt threshold: 15% APR.",
-    ...(showHousingData
-      ? ["Mortgage term used in the Buy vs Rent model: 30 years."]
-      : []),
+    "Default discount rate: 5%, adjustable by user.",
+    "Default base income growth: 2%, adjustable by user.",
+    "Default expense growth / inflation: 2.5%, adjustable by user.",
+    "Default expected investment return: 6%, adjustable by user.",
+    "Default Monte Carlo trials: 1,000, adjustable by user.",
+    "Emergency fund target: 3 months of expenses.",
+    "High-interest debt threshold: 15% APR.",
+    "Mortgage term used for housing calculations: 30 years.",
+    "Retirement need uses a 25x projected annual expense multiple.",
+    "Scholarship ROI uses a 10-year present value window for estimated income benefits.",
   ];
 
   y = addBulletList(doc, assumptions, 14, y, 175);
-  y += 4;
-
-  y = addSectionTitle(doc, "Limitations", y);
-
-  const limitations = [
-    "The model is directional and scenario-based, not predictive.",
-    "The model does not include taxes.",
-    "The model does not use live market, mortgage, inflation, or salary data.",
-    "Industry growth rates are simplified baselines and may not reflect a specific person's career path.",
-    "Income growth is normalized to prevent unusually high short-term growth from being projected unrealistically across an entire career.",
-    "The model does not include exact state-specific cost-of-living adjustments.",
-    "The model uses simplified assumptions for educational purposes.",
-    "The model does not replace a financial advisor.",
-    "The model does not provide legal, tax, investment, or financial advice.",
-  ];
-
-  y = addBulletList(doc, limitations, 14, y, 175);
 
   addFooter(doc);
 
   doc.save("finsight-financial-modeling-report.pdf");
 }
 
-// Optional legacy text report support, in case anything still imports it.
 export function generateTextReport(result: FinancialResult): string {
-  const showHousingData = shouldShowHousingData(result);
-
-  const housingSection = showHousingData
-    ? `
-
-Buy vs Rent NPV Model:
-PV Cost of Renting: ${formatCurrency(result.buyRentAnalysis.rentPV)}
-PV Cost of Buying: ${formatCurrency(result.buyRentAnalysis.buyPV)}
-NPV Difference: ${formatCurrency(result.buyRentAnalysis.difference)}
-Recommendation: ${result.buyRentAnalysis.recommendation.toUpperCase()}`
-    : "";
+  const goalAnalysis = result.goalAnalysis;
 
   return `
 FInsight Financial Modeling Report
 
 Financial Readiness Score: ${result.score.totalScore} / 100
 
+Financial Snapshot:
 Income PV: ${formatCurrency(result.incomePV)}
 Assets: ${formatCurrency(result.assetValue)}
 Debt PV: ${formatCurrency(result.debtPV)}
 Expense PV: ${formatCurrency(result.expensePV)}
 Net Position: ${formatCurrency(result.netPosition)}
 
+Score Breakdown:
+Emergency Fund: ${result.score.emergencyFundScore} / 25
+Debt Health: ${result.score.debtHealthScore} / 25
+Asset Strength: ${result.score.assetStrengthScore} / 25
+Goal Fit: ${result.score.goalFitScore} / 25
+
+Goal Analysis:
+Goal Model: ${goalAnalysis.title}
+Goal Status: ${formatGoalStatus(goalAnalysis.status)}
+Goal Score: ${goalAnalysis.goalScore} / 100
+Margin of Safety: ${goalAnalysis.marginOfSafety}
+Summary: ${goalAnalysis.summary}
+Recommendation Impact: ${goalAnalysis.recommendationImpact}
+
+Goal Metrics:
+${goalAnalysis.metrics
+  .map((metric) => `- ${metric.label}: ${metric.value}`)
+  .join("\n")}
+
+Goal Score Drivers:
+${goalAnalysis.scoreDrivers
+  .map(
+    (driver) =>
+      `- ${driver.label}: ${driver.impact > 0 ? "+" : ""}${driver.impact} | ${
+        driver.explanation
+      }`
+  )
+  .join("\n")}
+
+Goal Scenarios:
+${goalAnalysis.scenarios
+  .map(
+    (scenario) =>
+      `- ${scenario.name}: ${scenario.goalScore}/100 (${formatGoalStatus(
+        scenario.status
+      )}) - ${scenario.summary}`
+  )
+  .join("\n")}
+
 Recommendation:
 ${result.recommendation}
 
 Priority Action Plan:
 ${result.actionPlan.map((item, index) => `${index + 1}. ${item}`).join("\n")}
-${housingSection}
-
-Sensitivity Analysis:
-Downside Case: ${formatCurrency(result.sensitivityAnalysis.downsideCase)}
-Base Case: ${formatCurrency(result.sensitivityAnalysis.baseCase)}
-Upside Case: ${formatCurrency(result.sensitivityAnalysis.upsideCase)}
 
 Monte Carlo:
 Probability Positive: ${formatPercent(result.monteCarloResult.probabilityPositive)}
@@ -632,18 +687,7 @@ Probability Positive: ${formatPercent(result.monteCarloResult.probabilityPositiv
 Median Net Position: ${formatCurrency(result.monteCarloResult.median)}
 90th Percentile: ${formatCurrency(result.monteCarloResult.ninetiethPercentile)}
 
-Model Audit:
-Overall Status: ${formatAuditStatus(result.modelAudit.overallStatus)}
-${result.modelAudit.items
-  .map((item) => `- ${item.severity.toUpperCase()}: ${item.title}`)
-  .join("\n")}
-
-Methodology:
-FInsight uses present value analysis to estimate future income, expenses, debt, and assets in today's dollars. Future income is based on the user's base growth assumption plus an industry baseline. Growth up to 5% is used directly, while growth above 5% is softly normalized by keeping 35% of the excess growth above 5%.
-
-Disclaimer:
-FInsight is for educational purposes only and does not provide financial, investment, tax, or legal advice.
-`.trim();
+`;
 }
 
 export function downloadTextReport(result: FinancialResult) {
