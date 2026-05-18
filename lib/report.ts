@@ -102,17 +102,19 @@ Financial Readiness Score:
 Score = Emergency Fund Score + Debt Health Score + Asset Strength Score + Goal Fit Score
 
 Sensitivity Analysis:
-The model tests net position across income growth rates from 1% to 4% and discount rates from 4% to 7%.
+The model tests net position around the user's selected income growth and discount rate assumptions.
 
 Monte Carlo Simulation:
-The model runs 1,000 randomized simulations by varying income growth, discount rate, investment return, and expense growth.
+The model runs a user-selected number of randomized simulations by varying income growth, discount rate, investment return, and expense growth.
 
-Key Assumptions:
-- Base discount rate: 5%
-- Base income growth: 2% plus industry adjustment
+Key Default Assumptions:
+- Default discount rate: 5%, adjustable by user
+- Default base income growth: 2%, adjustable by user
+- Default expense growth / inflation rate: 2.5%, adjustable by user
+- Default expected investment return: 6%, adjustable by user
+- Default Monte Carlo trials: 1,000, adjustable by user
 - Emergency fund target: 3 months of expenses
 - High-interest debt threshold: 15% APR
-- Monte Carlo trials: 1,000
 
 Limitations:
 - Does not include taxes

@@ -20,7 +20,7 @@ type Props = {
   onCalculate: (result: FinancialResult) => void;
 };
 
-const totalSteps = 6;
+const totalSteps = 7;
 
 export default function FinancialForm({ onCalculate }: Props) {
   const [step, setStep] = useState(1);
@@ -47,6 +47,11 @@ export default function FinancialForm({ onCalculate }: Props) {
     targetHousePrice: 500000,
     scholarshipPercent: 0,
     expectedIncomeIncrease: 0,
+    discountRate: 5,
+    baseIncomeGrowthRate: 2,
+    expenseGrowthRate: 2.5,
+    expectedInvestmentReturn: 6,
+    monteCarloRuns: 1000,
     riskTolerance: "risk_neutral",
     timeHorizon: "5_10_years",
     goal: "buy_house",
@@ -519,6 +524,106 @@ export default function FinancialForm({ onCalculate }: Props) {
               After clicking calculate, the app will estimate your income PV,
               asset value, debt PV, expense PV, net position, and
               recommendation.
+            </p>
+          </div>
+        </section>
+      )}
+            {step === 7 && (
+        <section className="space-y-5">
+          <div>
+            <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">
+              Model Controls
+            </p>
+            <h2 className="mt-2 text-2xl font-bold">Model assumptions</h2>
+            <p className={mutedText}>
+              Adjust the core assumptions used in the present value model,
+              sensitivity analysis, and Monte Carlo simulation.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className={labelClass}>Discount Rate (%)</label>
+              <input
+                className={inputClass}
+                type="number"
+                step="0.1"
+                value={form.discountRate}
+                onChange={(e) => updateField("discountRate", e.target.value)}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Used to discount future income and expenses.
+              </p>
+            </div>
+
+            <div>
+              <label className={labelClass}>Base Income Growth (%)</label>
+              <input
+                className={inputClass}
+                type="number"
+                step="0.1"
+                value={form.baseIncomeGrowthRate}
+                onChange={(e) =>
+                  updateField("baseIncomeGrowthRate", e.target.value)
+                }
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Added to the industry growth adjustment.
+              </p>
+            </div>
+
+            <div>
+              <label className={labelClass}>Expense Growth / Inflation (%)</label>
+              <input
+                className={inputClass}
+                type="number"
+                step="0.1"
+                value={form.expenseGrowthRate}
+                onChange={(e) =>
+                  updateField("expenseGrowthRate", e.target.value)
+                }
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Used in the Monte Carlo expense projection.
+              </p>
+            </div>
+
+            <div>
+              <label className={labelClass}>Expected Investment Return (%)</label>
+              <input
+                className={inputClass}
+                type="number"
+                step="0.1"
+                value={form.expectedInvestmentReturn}
+                onChange={(e) =>
+                  updateField("expectedInvestmentReturn", e.target.value)
+                }
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Used to simulate asset growth.
+              </p>
+            </div>
+
+            <div>
+              <label className={labelClass}>Monte Carlo Simulations</label>
+              <input
+                className={inputClass}
+                type="number"
+                step="100"
+                value={form.monteCarloRuns}
+                onChange={(e) => updateField("monteCarloRuns", e.target.value)}
+              />
+              <p className="mt-1 text-xs text-slate-500">
+                Recommended: 1,000. Maximum used by model: 10,000.
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-purple-400/20 bg-purple-400/10 p-4 text-sm leading-6 text-purple-100">
+            <p>
+              These assumptions flow through the model calculations, stress
+              testing, and simulation outputs. This makes the model more
+              transparent and easier to defend.
             </p>
           </div>
         </section>

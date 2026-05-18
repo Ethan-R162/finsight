@@ -145,14 +145,18 @@ function calculateSimulatedNetPosition(
 }
 
 export function runMonteCarloSimulation(input: FinancialInput): MonteCarloResult {
-  const simulations = 1000;
+  const simulations = Math.max(100, Math.min(input.monteCarloRuns, 10000));
 
-  const baseIndustryGrowth = getIndustryGrowthBaseline(input.industry);
+const baseIndustryGrowth = getIndustryGrowthBaseline(input.industry);
 
-  const baseIncomeGrowth = Math.max(0, 0.02 + baseIndustryGrowth);
-  const baseDiscountRate = 0.05;
-  const baseInvestmentReturn = 0.06;
-  const baseExpenseGrowth = 0.025;
+const baseIncomeGrowth = Math.max(
+  0,
+  input.baseIncomeGrowthRate / 100 + baseIndustryGrowth
+);
+
+const baseDiscountRate = input.discountRate / 100;
+const baseInvestmentReturn = input.expectedInvestmentReturn / 100;
+const baseExpenseGrowth = input.expenseGrowthRate / 100;
 
   const netPositions: number[] = [];
 

@@ -61,6 +61,12 @@ export type FinancialInput = {
   scholarshipPercent: number;
   expectedIncomeIncrease: number;
 
+  discountRate: number;
+  baseIncomeGrowthRate: number;
+  expenseGrowthRate: number;
+  expectedInvestmentReturn: number;
+  monteCarloRuns: number;
+
   riskTolerance: RiskTolerance;
   timeHorizon: TimeHorizon;
   goal: Goal;

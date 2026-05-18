@@ -11,6 +11,10 @@ export function presentValueOfAnnuity(
   return payment * ((1 - Math.pow(1 + rate, -periods)) / rate);
 }
 
+function percentToDecimal(value: number): number {
+  return value / 100;
+}
+
 function getIndustryGrowthRate(industry: FinancialInput["industry"]): number {
   const rates = {
     finance: 0.034,
@@ -28,8 +32,8 @@ function getIndustryGrowthRate(industry: FinancialInput["industry"]): number {
 export function calculateFutureIncomePV(input: FinancialInput): number {
   const yearsUntilRetirement = Math.max(input.retirementAge - input.age, 0);
 
-  const discountRate = 0.05;
-  const baseIncomeGrowthRate = 0.02;
+  const discountRate = percentToDecimal(input.discountRate);
+  const baseIncomeGrowthRate = percentToDecimal(input.baseIncomeGrowthRate);
   const industryGrowthRate = getIndustryGrowthRate(input.industry);
 
   let incomeGrowthRate = baseIncomeGrowthRate + industryGrowthRate;
@@ -77,7 +81,7 @@ export function calculateDebtPV(input: FinancialInput): number {
 }
 
 export function calculateExpensePV(input: FinancialInput): number {
-  const monthlyDiscountRate = 0.05 / 12;
+  const monthlyDiscountRate = percentToDecimal(input.discountRate) / 12;
   const months = Math.max(input.retirementAge - input.age, 0) * 12;
 
   return presentValueOfAnnuity(

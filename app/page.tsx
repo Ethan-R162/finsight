@@ -82,13 +82,15 @@ function ModelMethodology() {
   ];
 
   const assumptions = [
-    "Base discount rate: 5%",
-    "Base income growth: 2% plus industry adjustment",
+    "Default discount rate: 5%, adjustable by the user",
+    "Default base income growth: 2%, adjustable by the user",
+    "Default expense growth / inflation rate: 2.5%, adjustable by the user",
+    "Default expected investment return: 6%, adjustable by the user",
+    "Default Monte Carlo simulation count: 1,000 trials, adjustable by the user",
     "Emergency fund target: at least 3 months of expenses",
     "High-interest credit card debt threshold: 15% APR",
-    "Sensitivity analysis tests income growth from 1% to 4%",
-    "Sensitivity analysis tests discount rates from 4% to 7%",
-    "Monte Carlo simulation runs 1,000 randomized trials",
+    "Sensitivity analysis is built around the user's selected discount rate and income growth assumptions",
+    "Monte Carlo simulation randomizes income growth, discount rate, investment return, and expense growth",
   ];
 
   const limitations = [
@@ -109,10 +111,12 @@ function ModelMethodology() {
           Model Methodology
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
-          FInsight is built as a financial modeling tool that converts user
-          inputs into present value estimates, stress-tests assumptions, and
-          generates a recommendation based on net position, risk tolerance, time
-          horizon, and goal fit.
+        FInsight is built as a financial modeling tool that converts user
+        inputs into present value estimates, stress-tests assumptions, and
+        generates a recommendation based on net position, risk tolerance, time
+        horizon, and goal fit. The model also includes user-adjustable assumptions
+        for discount rate, income growth, expense growth, expected investment
+        return, and Monte Carlo simulation count.
         </p>
       </div>
 
@@ -180,19 +184,19 @@ function ModelMethodology() {
           <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
             <p className="font-semibold text-white">Sensitivity Analysis</p>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              The model tests how net position changes across different income
-              growth and discount rate assumptions. This shows how sensitive the
-              recommendation is to changes in core financial assumptions.
+            The model tests how net position changes around the user's selected
+            income growth and discount rate assumptions. This shows how sensitive the
+            recommendation is to changes in core financial assumptions.
             </p>
           </div>
 
           <div className="rounded-xl border border-white/10 bg-slate-950/50 p-4">
             <p className="font-semibold text-white">Monte Carlo Simulation</p>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              The model runs 1,000 randomized simulations by changing income
-              growth, discount rate, investment return, and expense growth. The
-              output shows probability of positive net position, downside case,
-              median case, and upside case.
+            The model runs a user-selected number of randomized simulations by changing
+            income growth, discount rate, investment return, and expense growth. The
+            output shows probability of positive net position, downside case, median
+            case, and upside case.
             </p>
           </div>
         </div>
@@ -229,8 +233,9 @@ export default function Home() {
             </h2>
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-300">
-              FInsight analyzes income, assets, debt, expenses, risk tolerance,
-              and time horizon to generate a simple financial recommendation.
+            FInsight analyzes income, assets, debt, expenses, risk tolerance,
+            time horizon, and adjustable model assumptions to generate a financial
+            recommendation with sensitivity and Monte Carlo outputs.
             </p>
           </div>
 
