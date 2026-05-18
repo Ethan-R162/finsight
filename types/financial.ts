@@ -88,6 +88,7 @@ export type ScoreBreakdown = {
   goalFitScore: number;
   totalScore: number;
 };
+
 export type ScenarioComparison = {
   currentNetPosition: number;
   improvedNetPosition: number;
@@ -95,6 +96,7 @@ export type ScenarioComparison = {
   winner: "current" | "improved";
   summary: string;
 };
+
 export type SensitivityCell = {
   discountRate: number;
   incomeGrowthRate: number;
@@ -109,6 +111,7 @@ export type SensitivityAnalysis = {
   downsideCase: number;
   upsideCase: number;
 };
+
 export type MonteCarloResult = {
   simulations: number;
   probabilityPositive: number;
@@ -119,12 +122,33 @@ export type MonteCarloResult = {
   worstCase: number;
   bestCase: number;
 };
+
 export type BuyRentAnalysis = {
   rentPV: number;
   buyPV: number;
   difference: number;
   recommendation: "rent" | "buy";
   summary: string;
+};
+
+export type ModelAssumptions = {
+  discountRate: number;
+  baseIncomeGrowthRate: number;
+  expenseGrowthRate: number;
+  expectedInvestmentReturn: number;
+  monteCarloRuns: number;
+};
+export type AuditSeverity = "strong" | "info" | "warning" | "risk";
+
+export type AuditItem = {
+  severity: AuditSeverity;
+  title: string;
+  message: string;
+};
+
+export type ModelAudit = {
+  overallStatus: "healthy" | "watch" | "risky";
+  items: AuditItem[];
 };
 export type FinancialResult = {
   goal: Goal;
@@ -140,4 +164,6 @@ export type FinancialResult = {
   sensitivityAnalysis: SensitivityAnalysis;
   monteCarloResult: MonteCarloResult;
   buyRentAnalysis: BuyRentAnalysis;
+  modelAssumptions: ModelAssumptions;
+  modelAudit: ModelAudit;
 };

@@ -17,7 +17,14 @@ type Props = {
   onReset?: () => void;
 };
 
-type DashboardTab = "overview" | "risk" | "housing" | "coach" | "report";
+type DashboardTab =
+  | "overview"
+  | "risk"
+  | "assumptions"
+  | "audit"
+  | "housing"
+  | "coach"
+  | "report";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -41,6 +48,40 @@ function formatChartCurrency(value: number): string {
   }
 
   return `$${value}`;
+}
+
+function formatAuditStatus(status: string) {
+  if (status === "healthy") return "Healthy";
+  if (status === "watch") return "Watch";
+  return "Risky";
+}
+
+function getAuditBadgeClass(severity: string) {
+  if (severity === "strong") {
+    return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+  }
+
+  if (severity === "warning") {
+    return "border-yellow-400/30 bg-yellow-400/10 text-yellow-300";
+  }
+
+  if (severity === "risk") {
+    return "border-red-400/30 bg-red-400/10 text-red-300";
+  }
+
+  return "border-cyan-400/30 bg-cyan-400/10 text-cyan-300";
+}
+
+function getStatusClass(status: string) {
+  if (status === "healthy") {
+    return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
+  }
+
+  if (status === "watch") {
+    return "border-yellow-400/30 bg-yellow-400/10 text-yellow-300";
+  }
+
+  return "border-red-400/30 bg-red-400/10 text-red-300";
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
@@ -149,6 +190,9 @@ export default function ResultsCard({ result }: Props) {
 
   const isPositive = result.netPosition >= 0;
 
+  const showHousingTab =
+    result.goal === "buy_house" || result.goal === "rent_vs_buy";
+
   const chartData = [
     {
       name: "Income PV",
@@ -167,51 +211,69 @@ export default function ResultsCard({ result }: Props) {
       value: Math.round(result.expensePV),
     },
   ];
-  const showHousingTab =
-  result.goal === "buy_house" || result.goal === "rent_vs_buy";
 
-const tabs: { id: DashboardTab; label: string; description: string }[] = [
-  {
-    id: "overview",
-    label: "Overview",
-    description: "Score, recommendation, action plan, and snapshot.",
-  },
-  {
-    id: "risk",
-    label: "Risk",
-    description: "Sensitivity, Monte Carlo, and scenarios.",
-  },
-  ...(showHousingTab
-    ? [
-        {
-          id: "housing" as DashboardTab,
-          label: "Housing",
-          description: "Buy vs Rent NPV model.",
-        },
-      ]
-    : []),
-  {
-    id: "coach",
-    label: "AI Coach",
-    description: "Ask questions about the model.",
-  },
-  {
-    id: "report",
-    label: "Report",
-    description: "Download your PDF report.",
-  },
-];
+  const tabs: { id: DashboardTab; label: string; description: string }[] = [
+    {
+      id: "overview",
+      label: "Overview",
+      description: "Score, recommendation, action plan, and snapshot.",
+    },
+    {
+      id: "risk",
+      label: "Risk",
+      description: "Sensitivity, Monte Carlo, and scenarios.",
+    },
+    {
+      id: "assumptions",
+      label: "Assumptions",
+      description: "Discount rate, growth, and simulation settings.",
+    },
+    {
+      id: "audit",
+      label: "Audit",
+      description: "Input quality and model risk flags.",
+    },
+    ...(showHousingTab
+      ? [
+          {
+            id: "housing" as DashboardTab,
+            label: "Housing",
+            description: "Buy vs Rent NPV model.",
+          },
+        ]
+      : []),
+    {
+      id: "coach",
+      label: "AI Coach",
+      description: "Ask questions about the model.",
+    },
+    {
+      id: "report",
+      label: "Report",
+      description: "Download your PDF report.",
+    },
+  ];
+
+  const suggestedQuestions = [
+    "Explain my full results step by step.",
+    "Walk me through the Monte Carlo simulation.",
+    ...(showHousingTab ? ["What does the Buy vs Rent NPV model mean?"] : []),
+    "Which assumption matters most?",
+    "Explain sensitivity analysis.",
+    "Why does the discount rate matter?",
+    "Explain the model audit.",
+  ];
 
   return (
     <div className="space-y-6 rounded-[1.35rem] bg-slate-950/80 p-6">
       <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-2">
-  <div
-    className={`grid gap-2 ${
-      showHousingTab
-        ? "grid-cols-2 lg:grid-cols-5"
-        : "grid-cols-2 lg:grid-cols-4"
-    }`}
-  >
+        <div
+          className={`grid gap-2 ${
+            showHousingTab
+              ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-7"
+              : "grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
+          }`}
+        >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
 
@@ -220,7 +282,7 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`rounded-xl px-3 py-3 text-left text-sm transition ${
+                className={`rounded-xl px-3 py-2.5 text-left text-sm transition ${
                   isActive
                     ? "bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 text-white shadow-lg shadow-cyan-500/20"
                     : "bg-white/[0.03] text-slate-300 hover:bg-white/[0.08]"
@@ -241,7 +303,7 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
       </div>
 
       {activeTab === "overview" && (
-        <div className="grid items-start gap-6 xl:grid-cols-[0.85fr_1.15fr]">
+        <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[0.85fr_1.15fr]">
           <div className="space-y-6">
             <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-cyan-400/10 via-slate-900 to-emerald-400/10 p-6">
               <p className="text-sm text-slate-400">
@@ -316,15 +378,15 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
             </div>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
               <p className="mb-4 text-sm uppercase tracking-[0.2em] text-slate-400">
                 Financial Snapshot
               </p>
 
               <div className="h-72 min-h-72 w-full min-w-0">
-  <ResponsiveContainer width="100%" height={288}>
-    <BarChart data={chartData}>
+                <ResponsiveContainer width="100%" height={288}>
+                  <BarChart data={chartData}>
                     <XAxis dataKey="name" stroke="#94a3b8" fontSize={11} />
                     <YAxis
                       stroke="#94a3b8"
@@ -393,27 +455,18 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
             </p>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Current Plan
-                </p>
-                <p className="mt-2 text-xl font-semibold text-white">
-                  {formatCurrency(
-                    result.scenarioComparison.currentNetPosition
-                  )}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Improved Plan
-                </p>
-                <p className="mt-2 text-xl font-semibold text-emerald-300">
-                  {formatCurrency(
-                    result.scenarioComparison.improvedNetPosition
-                  )}
-                </p>
-              </div>
+              <MetricCard
+                label="Current Plan"
+                value={formatCurrency(
+                  result.scenarioComparison.currentNetPosition
+                )}
+              />
+              <MetricCard
+                label="Improved Plan"
+                value={formatCurrency(
+                  result.scenarioComparison.improvedNetPosition
+                )}
+              />
             </div>
 
             <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
@@ -440,32 +493,18 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
             </p>
 
             <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Downside Case
-                </p>
-                <p className="mt-2 text-lg font-semibold text-red-300">
-                  {formatCurrency(result.sensitivityAnalysis.downsideCase)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Base Case
-                </p>
-                <p className="mt-2 text-lg font-semibold text-cyan-300">
-                  {formatCurrency(result.sensitivityAnalysis.baseCase)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                  Upside Case
-                </p>
-                <p className="mt-2 text-lg font-semibold text-emerald-300">
-                  {formatCurrency(result.sensitivityAnalysis.upsideCase)}
-                </p>
-              </div>
+              <MetricCard
+                label="Downside Case"
+                value={formatCurrency(result.sensitivityAnalysis.downsideCase)}
+              />
+              <MetricCard
+                label="Base Case"
+                value={formatCurrency(result.sensitivityAnalysis.baseCase)}
+              />
+              <MetricCard
+                label="Upside Case"
+                value={formatCurrency(result.sensitivityAnalysis.upsideCase)}
+              />
             </div>
 
             <div className="mt-5 overflow-x-auto">
@@ -599,7 +638,115 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
         </div>
       )}
 
-      {activeTab === "housing" && (
+      {activeTab === "assumptions" && (
+        <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+          <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
+            Model Assumptions
+          </p>
+
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            These are the user-adjusted assumptions used by the model to
+            calculate present value, sensitivity analysis, Monte Carlo
+            simulation, and the final recommendation.
+          </p>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            <MetricCard
+              label="Discount Rate"
+              value={`${result.modelAssumptions.discountRate}%`}
+            />
+            <MetricCard
+              label="Base Income Growth"
+              value={`${result.modelAssumptions.baseIncomeGrowthRate}%`}
+            />
+            <MetricCard
+              label="Expense Growth / Inflation"
+              value={`${result.modelAssumptions.expenseGrowthRate}%`}
+            />
+            <MetricCard
+              label="Expected Investment Return"
+              value={`${result.modelAssumptions.expectedInvestmentReturn}%`}
+            />
+            <MetricCard
+              label="Monte Carlo Runs"
+              value={result.modelAssumptions.monteCarloRuns.toLocaleString()}
+            />
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-sm font-semibold text-white">
+              Why these assumptions matter
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              The discount rate controls how future cash flows are converted
+              into today&apos;s dollars. Income growth affects projected future
+              earnings. Expense growth estimates how costs rise over time.
+              Expected investment return affects simulated asset growth. Monte
+              Carlo runs determine how many randomized scenarios the model uses
+              to estimate downside, median, and upside outcomes.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "audit" && (
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
+                Model Audit
+              </p>
+              <h3 className="mt-2 text-xl font-bold text-white">
+                Input Validation & Risk Flags
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                This checks whether the inputs look reasonable before relying on
+                the model output.
+              </p>
+            </div>
+
+            <div
+              className={`rounded-2xl border px-4 py-3 text-sm ${getStatusClass(
+                result.modelAudit.overallStatus
+              )}`}
+            >
+              <p className="opacity-80">Overall Status</p>
+              <p className="mt-1 text-lg font-bold">
+                {formatAuditStatus(result.modelAudit.overallStatus)}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            {result.modelAudit.items.map((item, index) => (
+              <div
+                key={`${item.title}-${index}`}
+                className="rounded-2xl border border-white/10 bg-slate-950/60 p-4"
+              >
+                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <p className="font-semibold text-white">{item.title}</p>
+                    <p className="mt-1 text-sm leading-6 text-slate-400">
+                      {item.message}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`shrink-0 rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.15em] ${getAuditBadgeClass(
+                      item.severity
+                    )}`}
+                  >
+                    {item.severity}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === "housing" && showHousingTab && (
         <div className="rounded-3xl border border-teal-400/20 bg-teal-400/10 p-5">
           <p className="text-sm uppercase tracking-[0.2em] text-teal-300">
             Buy vs Rent NPV Model
@@ -611,23 +758,14 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
           </p>
 
           <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                PV Cost of Renting
-              </p>
-              <p className="mt-2 text-xl font-semibold text-white">
-                {formatCurrency(result.buyRentAnalysis.rentPV)}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-                PV Cost of Buying
-              </p>
-              <p className="mt-2 text-xl font-semibold text-white">
-                {formatCurrency(result.buyRentAnalysis.buyPV)}
-              </p>
-            </div>
+            <MetricCard
+              label="PV Cost of Renting"
+              value={formatCurrency(result.buyRentAnalysis.rentPV)}
+            />
+            <MetricCard
+              label="PV Cost of Buying"
+              value={formatCurrency(result.buyRentAnalysis.buyPV)}
+            />
           </div>
 
           <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
@@ -674,14 +812,7 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
           </p>
 
           <div className="mt-4 grid gap-2 md:grid-cols-2">
-            {[
-              "Explain my full results step by step.",
-              "Walk me through the Monte Carlo simulation.",
-              "What does the Buy vs Rent NPV model mean?",
-              "Which assumption matters most?",
-              "Explain sensitivity analysis.",
-              "Why does the discount rate matter?",
-            ].map((question) => (
+            {suggestedQuestions.map((question) => (
               <button
                 key={question}
                 type="button"
@@ -736,10 +867,11 @@ const tabs: { id: DashboardTab; label: string; description: string }[] = [
           </h3>
 
           <p className="mt-3 text-sm leading-6 text-slate-300">
-            Download a branded PDF report with the model output, recommendation,
-            score breakdown, scenario analysis, sensitivity analysis, Monte
-            Carlo results, Buy vs Rent NPV model, methodology, assumptions, and
-            limitations.
+            Download a branded PDF report with the model output,
+            recommendation, score breakdown, scenario analysis, sensitivity
+            analysis, Monte Carlo results, assumptions, model audit,
+            methodology, and limitations.
+            {showHousingTab && " The housing report also includes Buy vs Rent NPV."}
           </p>
 
           <button

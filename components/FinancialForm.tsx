@@ -16,15 +16,24 @@ import { generateScenarioComparison } from "@/lib/scenarios";
 import { generateSensitivityAnalysis } from "@/lib/sensitivity";
 import { runMonteCarloSimulation } from "@/lib/monteCarlo";
 import { generateBuyRentAnalysis } from "@/lib/buyRent";
+import { generateModelAudit } from "@/lib/modelAudit";
 
 type Props = {
   onCalculate: (result: FinancialResult) => void;
 };
 
+type NumberFieldName = {
+  [K in keyof FinancialInput]: FinancialInput[K] extends number ? K : never;
+}[keyof FinancialInput];
+
 const totalSteps = 7;
 
 export default function FinancialForm({ onCalculate }: Props) {
   const [step, setStep] = useState(1);
+
+  const [draftNumbers, setDraftNumbers] = useState<
+    Partial<Record<NumberFieldName, string>>
+  >({});
 
   const [form, setForm] = useState<FinancialInput>({
     age: 25,
@@ -66,11 +75,91 @@ export default function FinancialForm({ onCalculate }: Props) {
     goal: "buy_house",
   });
 
+  const inputClass =
+    "mt-1 w-full rounded-xl border border-white/10 bg-slate-900/80 p-3 text-white placeholder:text-slate-500 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10";
+
+  const labelClass = "block text-sm font-medium text-slate-300";
+
+  const mutedText = "text-sm leading-6 text-slate-400";
+
   function updateField(name: keyof FinancialInput, value: string) {
     setForm((prev) => ({
       ...prev,
-      [name]: isNaN(Number(value)) ? value : Number(value),
+      [name]: value,
     }));
+  }
+
+  function numberValue(name: NumberFieldName) {
+    return draftNumbers[name] ?? String(form[name] ?? 0);
+  }
+
+  function updateNumberField(name: NumberFieldName, value: string) {
+    setDraftNumbers((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+
+    if (value.trim() !== "" && !Number.isNaN(Number(value))) {
+      setForm((prev) => ({
+        ...prev,
+        [name]: Number(value),
+      }));
+    }
+  }
+
+  function commitNumberField(name: NumberFieldName) {
+    const rawValue = draftNumbers[name];
+
+    if (rawValue === undefined) return;
+
+    const cleanValue = rawValue.trim();
+
+    const finalValue =
+      cleanValue === "" || Number.isNaN(Number(cleanValue))
+        ? 0
+        : Number(cleanValue);
+
+    setForm((prev) => ({
+      ...prev,
+      [name]: finalValue,
+    }));
+
+    setDraftNumbers((prev) => {
+      const copy = { ...prev };
+      delete copy[name];
+      return copy;
+    });
+  }
+
+  function renderNumberInput({
+    name,
+    label,
+    stepValue,
+    min,
+    max,
+  }: {
+    name: NumberFieldName;
+    label: string;
+    stepValue?: string;
+    min?: string;
+    max?: string;
+  }) {
+    return (
+      <div>
+        <label className={labelClass}>{label}</label>
+        <input
+          className={inputClass}
+          type="text"
+          inputMode="decimal"
+          value={numberValue(name)}
+          onChange={(e) => updateNumberField(name, e.target.value)}
+          onBlur={() => commitNumberField(name)}
+          step={stepValue}
+          min={min}
+          max={max}
+        />
+      </div>
+    );
   }
 
   function nextStep() {
@@ -98,7 +187,8 @@ export default function FinancialForm({ onCalculate }: Props) {
     const sensitivityAnalysis = generateSensitivityAnalysis(form);
     const monteCarloResult = runMonteCarloSimulation(form);
     const buyRentAnalysis = generateBuyRentAnalysis(form);
-    
+    const modelAudit = generateModelAudit(form, netPosition, assetValue, debtPV);
+
     onCalculate({
       goal: form.goal,
       incomePV,
@@ -113,15 +203,16 @@ export default function FinancialForm({ onCalculate }: Props) {
       sensitivityAnalysis,
       monteCarloResult,
       buyRentAnalysis,
+      modelAssumptions: {
+        discountRate: form.discountRate,
+        baseIncomeGrowthRate: form.baseIncomeGrowthRate,
+        expenseGrowthRate: form.expenseGrowthRate,
+        expectedInvestmentReturn: form.expectedInvestmentReturn,
+        monteCarloRuns: form.monteCarloRuns,
+      },
+      modelAudit,
     });
   }
-
-  const inputClass =
-    "mt-1 w-full rounded-xl border border-white/10 bg-slate-900/80 p-3 text-white placeholder:text-slate-500 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10";
-
-  const labelClass = "block text-sm font-medium text-slate-300";
-
-  const mutedText = "text-sm leading-6 text-slate-400";
 
   return (
     <div className="space-y-6 rounded-[1.35rem] bg-slate-950/80 p-6 text-white">
@@ -172,144 +263,74 @@ export default function FinancialForm({ onCalculate }: Props) {
           </div>
 
           {(form.goal === "buy_house" || form.goal === "rent_vs_buy") && (
-  <div className="space-y-4 rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4">
-    <div>
-      <p className="text-sm font-semibold text-blue-300">
-        Buy vs Rent NPV Inputs
-      </p>
-      <p className="mt-1 text-xs leading-5 text-slate-400">
-        These inputs are used to compare the present value cost of renting
-        versus buying.
-      </p>
-    </div>
+            <div className="space-y-4 rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4">
+              <div>
+                <p className="text-sm font-semibold text-blue-300">
+                  Buy vs Rent NPV Inputs
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  These inputs are used to compare the present value cost of
+                  renting versus buying.
+                </p>
+              </div>
 
-    <div className="grid gap-4 md:grid-cols-2">
-      <div>
-        <label className={labelClass}>Target House Price</label>
-        <input
-          className={inputClass}
-          type="number"
-          value={form.targetHousePrice}
-          onChange={(e) => updateField("targetHousePrice", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Monthly Rent</label>
-        <input
-          className={inputClass}
-          type="number"
-          value={form.monthlyRent}
-          onChange={(e) => updateField("monthlyRent", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Down Payment (%)</label>
-        <input
-          className={inputClass}
-          type="number"
-          step="0.1"
-          value={form.downPaymentPercent}
-          onChange={(e) => updateField("downPaymentPercent", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Mortgage Rate (%)</label>
-        <input
-          className={inputClass}
-          type="number"
-          step="0.1"
-          value={form.mortgageRate}
-          onChange={(e) => updateField("mortgageRate", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Holding Period Years</label>
-        <input
-          className={inputClass}
-          type="number"
-          value={form.holdingPeriodYears}
-          onChange={(e) => updateField("holdingPeriodYears", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Home Appreciation (%)</label>
-        <input
-          className={inputClass}
-          type="number"
-          step="0.1"
-          value={form.homeAppreciationRate}
-          onChange={(e) => updateField("homeAppreciationRate", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Property Tax (%)</label>
-        <input
-          className={inputClass}
-          type="number"
-          step="0.1"
-          value={form.propertyTaxRate}
-          onChange={(e) => updateField("propertyTaxRate", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Maintenance (% of Home Value)</label>
-        <input
-          className={inputClass}
-          type="number"
-          step="0.1"
-          value={form.maintenanceRate}
-          onChange={(e) => updateField("maintenanceRate", e.target.value)}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>Closing Costs (%)</label>
-        <input
-          className={inputClass}
-          type="number"
-          step="0.1"
-          value={form.closingCostPercent}
-          onChange={(e) => updateField("closingCostPercent", e.target.value)}
-        />
-      </div>
-    </div>
-  </div>
-)}
+              <div className="grid gap-4 md:grid-cols-2">
+                {renderNumberInput({
+                  name: "targetHousePrice",
+                  label: "Target House Price",
+                })}
+                {renderNumberInput({
+                  name: "monthlyRent",
+                  label: "Monthly Rent",
+                })}
+                {renderNumberInput({
+                  name: "downPaymentPercent",
+                  label: "Down Payment (%)",
+                  stepValue: "0.1",
+                })}
+                {renderNumberInput({
+                  name: "mortgageRate",
+                  label: "Mortgage Rate (%)",
+                  stepValue: "0.1",
+                })}
+                {renderNumberInput({
+                  name: "holdingPeriodYears",
+                  label: "Holding Period Years",
+                })}
+                {renderNumberInput({
+                  name: "homeAppreciationRate",
+                  label: "Home Appreciation (%)",
+                  stepValue: "0.1",
+                })}
+                {renderNumberInput({
+                  name: "propertyTaxRate",
+                  label: "Property Tax (%)",
+                  stepValue: "0.1",
+                })}
+                {renderNumberInput({
+                  name: "maintenanceRate",
+                  label: "Maintenance (% of Home Value)",
+                  stepValue: "0.1",
+                })}
+                {renderNumberInput({
+                  name: "closingCostPercent",
+                  label: "Closing Costs (%)",
+                  stepValue: "0.1",
+                })}
+              </div>
+            </div>
+          )}
 
           {form.goal === "scholarship" && (
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className={labelClass}>Scholarship Percent</label>
-                <input
-                  className={inputClass}
-                  type="number"
-                  value={form.scholarshipPercent}
-                  onChange={(e) =>
-                    updateField("scholarshipPercent", e.target.value)
-                  }
-                />
-              </div>
-
-              <div>
-                <label className={labelClass}>
-                  Expected Income Increase (%)
-                </label>
-                <input
-                  className={inputClass}
-                  type="number"
-                  value={form.expectedIncomeIncrease}
-                  onChange={(e) =>
-                    updateField("expectedIncomeIncrease", e.target.value)
-                  }
-                />
-              </div>
+              {renderNumberInput({
+                name: "scholarshipPercent",
+                label: "Scholarship Percent",
+              })}
+              {renderNumberInput({
+                name: "expectedIncomeIncrease",
+                label: "Expected Income Increase (%)",
+              })}
             </div>
           )}
         </section>
@@ -329,35 +350,15 @@ export default function FinancialForm({ onCalculate }: Props) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className={labelClass}>Age</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.age}
-                onChange={(e) => updateField("age", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Retirement Age</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.retirementAge}
-                onChange={(e) => updateField("retirementAge", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Number of Dependents</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.dependents}
-                onChange={(e) => updateField("dependents", e.target.value)}
-              />
-            </div>
+            {renderNumberInput({ name: "age", label: "Age" })}
+            {renderNumberInput({
+              name: "retirementAge",
+              label: "Retirement Age",
+            })}
+            {renderNumberInput({
+              name: "dependents",
+              label: "Number of Dependents",
+            })}
 
             <div>
               <label className={labelClass}>City Type</label>
@@ -422,27 +423,14 @@ export default function FinancialForm({ onCalculate }: Props) {
               </select>
             </div>
 
-            <div>
-              <label className={labelClass}>Annual Income</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.income}
-                onChange={(e) => updateField("income", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Monthly Expenses</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.monthlyExpenses}
-                onChange={(e) =>
-                  updateField("monthlyExpenses", e.target.value)
-                }
-              />
-            </div>
+            {renderNumberInput({
+              name: "income",
+              label: "Annual Income",
+            })}
+            {renderNumberInput({
+              name: "monthlyExpenses",
+              label: "Monthly Expenses",
+            })}
           </div>
         </section>
       )}
@@ -460,57 +448,17 @@ export default function FinancialForm({ onCalculate }: Props) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className={labelClass}>Savings</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.savings}
-                onChange={(e) => updateField("savings", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Emergency Fund</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.emergencyFund}
-                onChange={(e) => updateField("emergencyFund", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Stock Value</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.stockValue}
-                onChange={(e) => updateField("stockValue", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Bond Value</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.bondValue}
-                onChange={(e) => updateField("bondValue", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Real Estate Value</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.realEstateValue}
-                onChange={(e) =>
-                  updateField("realEstateValue", e.target.value)
-                }
-              />
-            </div>
+            {renderNumberInput({ name: "savings", label: "Savings" })}
+            {renderNumberInput({
+              name: "emergencyFund",
+              label: "Emergency Fund",
+            })}
+            {renderNumberInput({ name: "stockValue", label: "Stock Value" })}
+            {renderNumberInput({ name: "bondValue", label: "Bond Value" })}
+            {renderNumberInput({
+              name: "realEstateValue",
+              label: "Real Estate Value",
+            })}
           </div>
         </section>
       )}
@@ -529,61 +477,28 @@ export default function FinancialForm({ onCalculate }: Props) {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className={labelClass}>Monthly Debt Payment</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.debtPayment}
-                onChange={(e) => updateField("debtPayment", e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Debt Interest Rate (%)</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.debtInterestRate}
-                onChange={(e) =>
-                  updateField("debtInterestRate", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Debt Years Remaining</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.debtYearsRemaining}
-                onChange={(e) =>
-                  updateField("debtYearsRemaining", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Credit Card Debt</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.creditCardDebt}
-                onChange={(e) =>
-                  updateField("creditCardDebt", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <label className={labelClass}>Credit Card APR (%)</label>
-              <input
-                className={inputClass}
-                type="number"
-                value={form.creditCardAPR}
-                onChange={(e) => updateField("creditCardAPR", e.target.value)}
-              />
-            </div>
+            {renderNumberInput({
+              name: "debtPayment",
+              label: "Monthly Debt Payment",
+            })}
+            {renderNumberInput({
+              name: "debtInterestRate",
+              label: "Debt Interest Rate (%)",
+              stepValue: "0.1",
+            })}
+            {renderNumberInput({
+              name: "debtYearsRemaining",
+              label: "Debt Years Remaining",
+            })}
+            {renderNumberInput({
+              name: "creditCardDebt",
+              label: "Credit Card Debt",
+            })}
+            {renderNumberInput({
+              name: "creditCardAPR",
+              label: "Credit Card APR (%)",
+              stepValue: "0.1",
+            })}
           </div>
         </section>
       )}
@@ -634,6 +549,64 @@ export default function FinancialForm({ onCalculate }: Props) {
               After clicking calculate, the app will estimate your income PV,
               asset value, debt PV, expense PV, net position, and
               recommendation.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {step === 7 && (
+        <section className="space-y-5">
+          <div>
+            <p className="text-sm uppercase tracking-[0.25em] text-cyan-300">
+              Model Assumptions
+            </p>
+            <h2 className="mt-2 text-2xl font-bold">
+              Adjust the model assumptions
+            </h2>
+            <p className={mutedText}>
+              These assumptions control present value calculations, sensitivity
+              analysis, Monte Carlo simulation, and the final recommendation.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            {renderNumberInput({
+              name: "discountRate",
+              label: "Discount Rate (%)",
+              stepValue: "0.1",
+            })}
+            {renderNumberInput({
+              name: "baseIncomeGrowthRate",
+              label: "Base Income Growth (%)",
+              stepValue: "0.1",
+            })}
+            {renderNumberInput({
+              name: "expenseGrowthRate",
+              label: "Expense Growth / Inflation (%)",
+              stepValue: "0.1",
+            })}
+            {renderNumberInput({
+              name: "expectedInvestmentReturn",
+              label: "Expected Investment Return (%)",
+              stepValue: "0.1",
+            })}
+            {renderNumberInput({
+              name: "monteCarloRuns",
+              label: "Monte Carlo Runs",
+              stepValue: "100",
+              min: "100",
+              max: "10000",
+            })}
+          </div>
+
+          <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm leading-6 text-cyan-100">
+            <p className="font-semibold text-cyan-300">Why this matters</p>
+            <p className="mt-2">
+              A higher discount rate lowers the present value of future cash
+              flows. Income growth changes projected earnings. Expense growth
+              estimates how costs rise over time. Expected investment return
+              affects simulated asset growth. Monte Carlo runs control how many
+              randomized scenarios the model tests.
             </p>
           </div>
         </section>
