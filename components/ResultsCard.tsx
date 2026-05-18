@@ -23,7 +23,6 @@ type DashboardTab =
   | "assumptions"
   | "audit"
   | "housing"
-  | "coach"
   | "report";
 
 function formatCurrency(value: number): string {
@@ -115,53 +114,6 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 
 export default function ResultsCard({ result }: Props) {
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
-  const [coachQuestion, setCoachQuestion] = useState("");
-  const [coachAnswer, setCoachAnswer] = useState<string | null>(null);
-  const [isCoachLoading, setIsCoachLoading] = useState(false);
-  const [coachError, setCoachError] = useState<string | null>(null);
-
-  async function handleAskCoach(questionOverride?: string) {
-    if (!result) return;
-
-    const question = questionOverride || coachQuestion;
-
-    if (!question.trim()) {
-      setCoachError("Enter a question first.");
-      return;
-    }
-
-    setIsCoachLoading(true);
-    setCoachError(null);
-    setCoachAnswer(null);
-
-    try {
-      const response = await fetch("/api/coach", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          question,
-          result,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.answer || "Failed to get coach answer.");
-      }
-
-      setCoachAnswer(data.answer);
-      setCoachQuestion(question);
-    } catch (error) {
-      setCoachError(
-        error instanceof Error ? error.message : "Failed to get coach answer."
-      );
-    } finally {
-      setIsCoachLoading(false);
-    }
-  }
 
   if (!result) {
     return (
@@ -243,25 +195,10 @@ export default function ResultsCard({ result }: Props) {
         ]
       : []),
     {
-      id: "coach",
-      label: "AI Coach",
-      description: "Ask questions about the model.",
-    },
-    {
       id: "report",
       label: "Report",
       description: "Download your PDF report.",
     },
-  ];
-
-  const suggestedQuestions = [
-    "Explain my full results step by step.",
-    "Walk me through the Monte Carlo simulation.",
-    ...(showHousingTab ? ["What does the Buy vs Rent NPV model mean?"] : []),
-    "Which assumption matters most?",
-    "Explain sensitivity analysis.",
-    "Why does the discount rate matter?",
-    "Explain the model audit.",
   ];
 
   return (
@@ -270,8 +207,8 @@ export default function ResultsCard({ result }: Props) {
         <div
           className={`grid gap-2 ${
             showHousingTab
-              ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-7"
-              : "grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
+              ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
+              : "grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
           }`}
         >
           {tabs.map((tab) => {
@@ -799,63 +736,6 @@ export default function ResultsCard({ result }: Props) {
         </div>
       )}
 
-      {activeTab === "coach" && (
-        <div className="rounded-3xl border border-indigo-400/20 bg-indigo-400/10 p-5">
-          <p className="text-sm uppercase tracking-[0.2em] text-indigo-300">
-            FInsight AI Model Coach
-          </p>
-
-          <p className="mt-2 text-sm leading-6 text-slate-300">
-            Use the AI Coach to explain your results, walk through formulas,
-            clarify assumptions, and understand the financial model step by
-            step.
-          </p>
-
-          <div className="mt-4 grid gap-2 md:grid-cols-2">
-            {suggestedQuestions.map((question) => (
-              <button
-                key={question}
-                type="button"
-                onClick={() => handleAskCoach(question)}
-                className="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-left text-sm text-slate-200 transition hover:border-indigo-300/40 hover:bg-indigo-400/10"
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-4 flex flex-col gap-3">
-            <textarea
-              value={coachQuestion}
-              onChange={(event) => setCoachQuestion(event.target.value)}
-              placeholder="Ask a question about your model results..."
-              className="min-h-24 w-full rounded-xl border border-white/10 bg-slate-950/70 p-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-400/10"
-            />
-
-            <button
-              type="button"
-              onClick={() => handleAskCoach()}
-              disabled={isCoachLoading}
-              className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-cyan-500 to-emerald-500 p-3 font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isCoachLoading ? "Thinking..." : "Ask AI Coach"}
-            </button>
-          </div>
-
-          {coachError && (
-            <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-200">
-              {coachError}
-            </div>
-          )}
-
-          {coachAnswer && (
-            <div className="mt-4 whitespace-pre-line rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-100">
-              {coachAnswer}
-            </div>
-          )}
-        </div>
-      )}
-
       {activeTab === "report" && (
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
           <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
@@ -871,7 +751,8 @@ export default function ResultsCard({ result }: Props) {
             recommendation, score breakdown, scenario analysis, sensitivity
             analysis, Monte Carlo results, assumptions, model audit,
             methodology, and limitations.
-            {showHousingTab && " The housing report also includes Buy vs Rent NPV."}
+            {showHousingTab &&
+              " The housing report also includes Buy vs Rent NPV."}
           </p>
 
           <button

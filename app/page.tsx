@@ -3,6 +3,7 @@
 import { useState } from "react";
 import FinancialForm from "@/components/FinancialForm";
 import ResultsCard from "@/components/ResultsCard";
+import AICoachBubble from "@/components/AICoachBubble";
 import { FinancialResult } from "@/types/financial";
 
 function FInsightLogo() {
@@ -292,7 +293,7 @@ function DashboardPage({
               <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-300">
                 Your intake has been converted into a dashboard with present
                 value outputs, recommendation logic, scenario analysis, Monte
-                Carlo simulation, and AI model coaching.
+                Carlo simulation, model audit, and AI model coaching.
                 {showHousingData && " Housing NPV is included for this goal."}
               </p>
             </div>
@@ -384,7 +385,7 @@ export default function Home() {
           <FInsightLogo />
 
           <div className="hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-slate-300 backdrop-blur md:block">
-            MVP Financial Decision Engine
+            AI-Powered Financial Modeling Engine
           </div>
         </nav>
 
@@ -394,6 +395,8 @@ export default function Home() {
           <DashboardPage result={result} onReset={() => setResult(null)} />
         )}
       </div>
+
+      <AICoachBubble result={result} />
     </main>
   );
 }
