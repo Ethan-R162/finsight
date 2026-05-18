@@ -58,6 +58,8 @@ export type FinancialInput = {
   industry: Industry;
 
   targetHousePrice: number;
+
+  educationCost: number;
   scholarshipPercent: number;
   expectedIncomeIncrease: number;
 
@@ -138,6 +140,7 @@ export type ModelAssumptions = {
   expectedInvestmentReturn: number;
   monteCarloRuns: number;
 };
+
 export type AuditSeverity = "strong" | "info" | "warning" | "risk";
 
 export type AuditItem = {
@@ -150,6 +153,27 @@ export type ModelAudit = {
   overallStatus: "healthy" | "watch" | "risky";
   items: AuditItem[];
 };
+
+export type GoalAnalysisStatus = "strong" | "watch" | "risky";
+
+export type GoalMetric = {
+  label: string;
+  value: string;
+  detail?: string;
+};
+
+export type GoalAnalysis = {
+  goal: Goal;
+  title: string;
+  status: GoalAnalysisStatus;
+  goalScore: number;
+  scoreAdjustment: number;
+  summary: string;
+  recommendationImpact: string;
+  metrics: GoalMetric[];
+  decisionRules: string[];
+};
+
 export type FinancialResult = {
   goal: Goal;
   incomePV: number;
@@ -164,6 +188,7 @@ export type FinancialResult = {
   sensitivityAnalysis: SensitivityAnalysis;
   monteCarloResult: MonteCarloResult;
   buyRentAnalysis: BuyRentAnalysis;
+  goalAnalysis: GoalAnalysis;
   modelAssumptions: ModelAssumptions;
   modelAudit: ModelAudit;
 };

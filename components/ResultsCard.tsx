@@ -20,10 +20,10 @@ type Props = {
 
 type DashboardTab =
   | "overview"
+  | "goal"
   | "risk"
   | "assumptions"
   | "audit"
-  | "housing"
   | "report";
 
 function formatCurrency(value: number): string {
@@ -56,6 +56,21 @@ function formatAuditStatus(status: string) {
   return "Risky";
 }
 
+function getGoalLabel(goal: string) {
+  if (goal === "buy_house") return "Buy House";
+  if (goal === "rent_vs_buy") return "Rent vs Buy";
+  if (goal === "scholarship") return "Scholarship ROI";
+  if (goal === "retirement") return "Retirement";
+  if (goal === "invest_assets") return "Investing";
+  return "Goal";
+}
+
+function getGoalStatusLabel(status: string) {
+  if (status === "strong") return "Strong";
+  if (status === "watch") return "Watch";
+  return "Risky";
+}
+
 function getAuditBadgeClass(severity: string) {
   if (severity === "strong") {
     return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
@@ -73,7 +88,7 @@ function getAuditBadgeClass(severity: string) {
 }
 
 function getStatusClass(status: string) {
-  if (status === "healthy") {
+  if (status === "healthy" || status === "strong") {
     return "border-emerald-400/30 bg-emerald-400/10 text-emerald-300";
   }
 
@@ -84,13 +99,22 @@ function getStatusClass(status: string) {
   return "border-red-400/30 bg-red-400/10 text-red-300";
 }
 
-function MetricCard({ label, value }: { label: string; value: string }) {
+function MetricCard({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail?: string;
+}) {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4">
       <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
         {label}
       </p>
       <p className="mt-2 text-xl font-semibold text-white">{value}</p>
+      {detail && <p className="mt-2 text-xs leading-5 text-slate-500">{detail}</p>}
     </div>
   );
 }
@@ -107,6 +131,24 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
         <div
           className="h-2 rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
           style={{ width: `${(value / 25) * 100}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function GoalScoreBar({ value }: { value: number }) {
+  return (
+    <div>
+      <div className="mb-2 flex justify-between text-sm">
+        <span className="text-slate-300">Goal Model Score</span>
+        <span className="text-cyan-300">{value}/100</span>
+      </div>
+
+      <div className="h-3 rounded-full bg-white/10">
+        <div
+          className="h-3 rounded-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400"
+          style={{ width: `${value}%` }}
         />
       </div>
     </div>
@@ -142,9 +184,7 @@ export default function ResultsCard({ result }: Props) {
   }
 
   const isPositive = result.netPosition >= 0;
-
-  const showHousingTab =
-    result.goal === "buy_house" || result.goal === "rent_vs_buy";
+  const goalAnalysis = result.goalAnalysis;
 
   const chartData = [
     {
@@ -172,6 +212,11 @@ export default function ResultsCard({ result }: Props) {
       description: "Score, recommendation, action plan, and snapshot.",
     },
     {
+      id: "goal",
+      label: getGoalLabel(result.goal),
+      description: "Goal-specific model and decision rules.",
+    },
+    {
       id: "risk",
       label: "Risk",
       description: "Sensitivity, Monte Carlo, and scenarios.",
@@ -186,15 +231,6 @@ export default function ResultsCard({ result }: Props) {
       label: "Audit",
       description: "Input quality and model risk flags.",
     },
-    ...(showHousingTab
-      ? [
-          {
-            id: "housing" as DashboardTab,
-            label: "Housing",
-            description: "Buy vs Rent NPV model.",
-          },
-        ]
-      : []),
     {
       id: "report",
       label: "Report",
@@ -205,13 +241,7 @@ export default function ResultsCard({ result }: Props) {
   return (
     <div className="space-y-6 rounded-[1.35rem] bg-slate-950/80 p-6">
       <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-2">
-        <div
-          className={`grid gap-2 ${
-            showHousingTab
-              ? "grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
-              : "grid-cols-2 md:grid-cols-3 xl:grid-cols-5"
-          }`}
-        >
+        <div className="grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.id;
 
@@ -267,9 +297,49 @@ export default function ResultsCard({ result }: Props) {
               <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
                 Recommendation
               </p>
-              <p className="mt-3 leading-7 text-slate-100">
+              <p className="mt-3 whitespace-pre-line leading-7 text-slate-100">
                 {result.recommendation}
               </p>
+            </div>
+
+            <div className="rounded-3xl border border-purple-400/20 bg-purple-400/10 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
+                    Goal Overlay
+                  </p>
+                  <h3 className="mt-2 text-xl font-bold text-white">
+                    {goalAnalysis.title}
+                  </h3>
+                </div>
+
+                <div
+                  className={`rounded-2xl border px-4 py-3 text-sm ${getStatusClass(
+                    goalAnalysis.status
+                  )}`}
+                >
+                  <p className="opacity-80">Goal Status</p>
+                  <p className="mt-1 text-lg font-bold">
+                    {getGoalStatusLabel(goalAnalysis.status)}
+                  </p>
+                </div>
+              </div>
+
+              <p className="mt-4 text-sm leading-6 text-slate-300">
+                {goalAnalysis.summary}
+              </p>
+
+              <div className="mt-4">
+                <GoalScoreBar value={goalAnalysis.goalScore} />
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("goal")}
+                className="mt-4 rounded-xl border border-purple-400/30 bg-slate-950/60 px-4 py-3 text-sm font-semibold text-purple-300 transition hover:bg-purple-400/10"
+              >
+                Open Goal Analysis
+              </button>
             </div>
 
             <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5">
@@ -380,6 +450,119 @@ export default function ResultsCard({ result }: Props) {
               >
                 {formatCurrency(result.netPosition)}
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "goal" && (
+        <div className="space-y-6">
+          <div className="rounded-3xl border border-purple-400/20 bg-purple-400/10 p-5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
+                  Goal-Specific Model
+                </p>
+
+                <h3 className="mt-2 text-2xl font-bold text-white">
+                  {goalAnalysis.title}
+                </h3>
+
+                <p className="mt-3 text-sm leading-7 text-slate-300">
+                  {goalAnalysis.summary}
+                </p>
+              </div>
+
+              <div
+                className={`shrink-0 rounded-2xl border px-5 py-4 text-sm ${getStatusClass(
+                  goalAnalysis.status
+                )}`}
+              >
+                <p className="opacity-80">Goal Status</p>
+                <p className="mt-1 text-2xl font-bold">
+                  {getGoalStatusLabel(goalAnalysis.status)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+              <GoalScoreBar value={goalAnalysis.goalScore} />
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2">
+                <MetricCard
+                  label="Goal Score"
+                  value={`${goalAnalysis.goalScore}/100`}
+                  detail="Goal-specific model score before being converted into the 25-point Goal Fit score."
+                />
+                <MetricCard
+                  label="Score Adjustment"
+                  value={
+                    goalAnalysis.scoreAdjustment >= 0
+                      ? `+${goalAnalysis.scoreAdjustment}`
+                      : `${goalAnalysis.scoreAdjustment}`
+                  }
+                  detail="Directional impact from the selected goal model."
+                />
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+              <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                Recommendation Impact
+              </p>
+
+              <p className="mt-3 text-sm leading-6 text-slate-200">
+                {goalAnalysis.recommendationImpact}
+              </p>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-cyan-400/20 bg-cyan-400/10 p-5">
+            <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
+              Goal Metrics
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              These are the calculations that are specific to the selected goal.
+              This is the section that makes the model change based on the user&apos;s
+              decision objective.
+            </p>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {goalAnalysis.metrics.map((metric) => (
+                <MetricCard
+                  key={metric.label}
+                  label={metric.label}
+                  value={metric.value}
+                  detail={metric.detail}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+            <p className="text-sm uppercase tracking-[0.2em] text-emerald-300">
+              Decision Rules
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-slate-300">
+              These rules explain how the selected goal influences the final
+              decision and Goal Fit score.
+            </p>
+
+            <div className="mt-4 space-y-3">
+              {goalAnalysis.decisionRules.map((rule, index) => (
+                <div
+                  key={`${rule}-${index}`}
+                  className="flex gap-3 rounded-2xl border border-white/10 bg-slate-950/50 p-4"
+                >
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-sm font-bold text-emerald-300">
+                    {index + 1}
+                  </div>
+
+                  <p className="text-sm leading-6 text-slate-100">{rule}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -682,59 +865,6 @@ export default function ResultsCard({ result }: Props) {
         </div>
       )}
 
-      {activeTab === "housing" && showHousingTab && (
-        <div className="rounded-3xl border border-teal-400/20 bg-teal-400/10 p-5">
-          <p className="text-sm uppercase tracking-[0.2em] text-teal-300">
-            Buy vs Rent NPV Model
-          </p>
-
-          <p className="mt-2 text-sm leading-6 text-slate-300">
-            This model compares the present value cost of renting versus buying
-            over the selected holding period.
-          </p>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <MetricCard
-              label="PV Cost of Renting"
-              value={formatCurrency(result.buyRentAnalysis.rentPV)}
-            />
-            <MetricCard
-              label="PV Cost of Buying"
-              value={formatCurrency(result.buyRentAnalysis.buyPV)}
-            />
-          </div>
-
-          <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-              NPV Difference
-            </p>
-
-            <p
-              className={`mt-2 text-3xl font-bold ${
-                result.buyRentAnalysis.recommendation === "buy"
-                  ? "text-emerald-300"
-                  : "text-cyan-300"
-              }`}
-            >
-              {formatCurrency(result.buyRentAnalysis.difference)}
-            </p>
-
-            <p className="mt-3 text-sm leading-6 text-slate-300">
-              {result.buyRentAnalysis.summary}
-            </p>
-
-            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-sm text-slate-300">
-                Model recommendation:{" "}
-                <span className="font-semibold uppercase text-teal-300">
-                  {result.buyRentAnalysis.recommendation}
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {activeTab === "report" && (
         <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6">
           <p className="text-sm uppercase tracking-[0.2em] text-cyan-300">
@@ -747,11 +877,9 @@ export default function ResultsCard({ result }: Props) {
 
           <p className="mt-3 text-sm leading-6 text-slate-300">
             Download a branded PDF report with the model output,
-            recommendation, score breakdown, scenario analysis, sensitivity
-            analysis, Monte Carlo results, assumptions, model audit,
+            recommendation, score breakdown, goal analysis, scenario analysis,
+            sensitivity analysis, Monte Carlo results, assumptions, model audit,
             methodology, and limitations.
-            {showHousingTab &&
-              " The housing report also includes Buy vs Rent NPV."}
           </p>
 
           <button

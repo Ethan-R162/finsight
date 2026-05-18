@@ -1,6 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import {
+  applyGoalWeightToRecommendation,
+  applyGoalWeightToScore,
+  generateGoalAnalysis,
+} from "@/lib/goalAnalysis";
 import { FinancialInput, FinancialResult } from "@/types/financial";
 import {
   calculateAssetValue,
@@ -46,6 +51,7 @@ const sampleProfiles = {
       creditCardAPR: 0,
 
       targetHousePrice: 0,
+      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
 
@@ -96,6 +102,7 @@ const sampleProfiles = {
       creditCardAPR: 22,
 
       targetHousePrice: 850000,
+      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
 
@@ -146,6 +153,7 @@ const sampleProfiles = {
       creditCardAPR: 19,
 
       targetHousePrice: 0,
+      educationCost: 60000,
       scholarshipPercent: 60,
       expectedIncomeIncrease: 25,
 
@@ -196,6 +204,7 @@ const sampleProfiles = {
       creditCardAPR: 24,
 
       targetHousePrice: 0,
+      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
 
@@ -246,6 +255,7 @@ const sampleProfiles = {
       creditCardAPR: 0,
 
       targetHousePrice: 0,
+      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
 
@@ -321,6 +331,7 @@ export default function FinancialForm({ onCalculate }: Props) {
     industry: "finance",
 
     targetHousePrice: 500000,
+    educationCost: 50000,
     scholarshipPercent: 0,
     expectedIncomeIncrease: 0,
 
@@ -462,14 +473,31 @@ export default function FinancialForm({ onCalculate }: Props) {
     const debtPV = calculateDebtPV(form);
     const expensePV = calculateExpensePV(form);
     const netPosition = calculateNetPosition(form);
-    const recommendation = getRecommendation(form, netPosition);
-    const score = calculateFinancialScore(form, netPosition, assetValue, debtPV);
+
+    const baseRecommendation = getRecommendation(form, netPosition);
+
+    const baseScore = calculateFinancialScore(
+      form,
+      netPosition,
+      assetValue,
+      debtPV
+    );
+
     const actionPlan = generateActionPlan(form, netPosition);
     const scenarioComparison = generateScenarioComparison(form);
     const sensitivityAnalysis = generateSensitivityAnalysis(form);
     const monteCarloResult = runMonteCarloSimulation(form);
     const buyRentAnalysis = generateBuyRentAnalysis(form);
     const modelAudit = generateModelAudit(form, netPosition, assetValue, debtPV);
+
+    const goalAnalysis = generateGoalAnalysis(form);
+
+    const score = applyGoalWeightToScore(baseScore, goalAnalysis);
+
+    const recommendation = applyGoalWeightToRecommendation(
+      baseRecommendation,
+      goalAnalysis
+    );
 
     onCalculate({
       goal: form.goal,
@@ -485,6 +513,7 @@ export default function FinancialForm({ onCalculate }: Props) {
       sensitivityAnalysis,
       monteCarloResult,
       buyRentAnalysis,
+      goalAnalysis,
       modelAssumptions: {
         discountRate: form.discountRate,
         baseIncomeGrowthRate: form.baseIncomeGrowthRate,
@@ -578,7 +607,8 @@ export default function FinancialForm({ onCalculate }: Props) {
             </p>
             <h2 className="mt-2 text-2xl font-bold">What is your main goal?</h2>
             <p className={mutedText}>
-              This helps the app decide which financial rules matter most.
+              This now drives a goal-specific model that changes the dashboard,
+              score, and recommendation.
             </p>
           </div>
 
@@ -601,11 +631,11 @@ export default function FinancialForm({ onCalculate }: Props) {
             <div className="space-y-4 rounded-2xl border border-blue-400/20 bg-blue-400/10 p-4">
               <div>
                 <p className="text-sm font-semibold text-blue-300">
-                  Buy vs Rent NPV Inputs
+                  Housing Model Inputs
                 </p>
                 <p className="mt-1 text-xs leading-5 text-slate-400">
-                  These inputs are used to compare the present value cost of
-                  renting versus buying.
+                  These inputs help calculate affordability, monthly ownership
+                  costs, and rent-versus-buy NPV.
                 </p>
               </div>
 
@@ -657,15 +687,59 @@ export default function FinancialForm({ onCalculate }: Props) {
           )}
 
           {form.goal === "scholarship" && (
-            <div className="grid gap-4 md:grid-cols-2">
-              {renderNumberInput({
-                name: "scholarshipPercent",
-                label: "Scholarship Percent",
-              })}
-              {renderNumberInput({
-                name: "expectedIncomeIncrease",
-                label: "Expected Income Increase (%)",
-              })}
+            <div className="space-y-4 rounded-2xl border border-purple-400/20 bg-purple-400/10 p-4">
+              <div>
+                <p className="text-sm font-semibold text-purple-300">
+                  Scholarship ROI Inputs
+                </p>
+                <p className="mt-1 text-xs leading-5 text-slate-400">
+                  These inputs estimate net education cost, income benefit,
+                  payback period, and education NPV.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                {renderNumberInput({
+                  name: "educationCost",
+                  label: "Estimated Total Education Cost",
+                })}
+                {renderNumberInput({
+                  name: "scholarshipPercent",
+                  label: "Scholarship Percent",
+                  stepValue: "0.1",
+                })}
+                {renderNumberInput({
+                  name: "expectedIncomeIncrease",
+                  label: "Expected Income Increase (%)",
+                  stepValue: "0.1",
+                })}
+              </div>
+            </div>
+          )}
+
+          {form.goal === "retirement" && (
+            <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 p-4 text-sm leading-6 text-emerald-100">
+              <p className="font-semibold text-emerald-300">
+                Retirement model active
+              </p>
+              <p className="mt-2">
+                The dashboard will estimate years until retirement, projected
+                assets at retirement, retirement need, coverage ratio, and
+                surplus or gap.
+              </p>
+            </div>
+          )}
+
+          {form.goal === "invest_assets" && (
+            <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm leading-6 text-cyan-100">
+              <p className="font-semibold text-cyan-300">
+                Investment readiness model active
+              </p>
+              <p className="mt-2">
+                The dashboard will test emergency fund strength, high-interest
+                debt, investable assets, monthly surplus, and directional
+                allocation logic.
+              </p>
             </div>
           )}
         </section>
@@ -900,7 +974,8 @@ export default function FinancialForm({ onCalculate }: Props) {
             </h2>
             <p className={mutedText}>
               These assumptions control present value calculations, sensitivity
-              analysis, Monte Carlo simulation, and the final recommendation.
+              analysis, Monte Carlo simulation, goal analysis, and the final
+              recommendation.
             </p>
           </div>
 
