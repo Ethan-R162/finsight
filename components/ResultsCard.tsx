@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Bar,
   BarChart,
@@ -57,6 +58,42 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function ResultsCard({ result }: Props) {
+  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
+  const [isExplaining, setIsExplaining] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  async function handleExplainResults() {
+    if (!result) return;
+
+    setIsExplaining(true);
+    setAiError(null);
+
+    try {
+      const response = await fetch("/api/explain", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(result),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate explanation.");
+      }
+
+      setAiExplanation(data.explanation);
+    } catch (error) {
+      setAiError(
+        error instanceof Error
+          ? error.message
+          : "Failed to generate explanation."
+      );
+    } finally {
+      setIsExplaining(false);
+    }
+  }
   if (!result) {
     return (
       <div className="min-h-full rounded-[1.35rem] bg-slate-950/80 p-6">
@@ -521,7 +558,38 @@ export default function ResultsCard({ result }: Props) {
           </div>
         </div>
       </div>
+      <div className="rounded-3xl border border-fuchsia-400/20 bg-fuchsia-400/10 p-5">
+        <p className="text-sm uppercase tracking-[0.2em] text-fuchsia-300">
+          AI Explanation Layer
+        </p>
 
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          Generate a plain-English analyst summary of the model output. The AI
+          explains the results, but the financial calculations still come from
+          the transparent model.
+        </p>
+
+        <button
+          type="button"
+          onClick={handleExplainResults}
+          disabled={isExplaining}
+          className="mt-4 w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-cyan-500 to-emerald-500 p-3 font-semibold text-white shadow-lg shadow-fuchsia-500/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isExplaining ? "Generating Explanation..." : "Explain My Results with AI"}
+        </button>
+
+        {aiError && (
+          <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-200">
+            {aiError}
+          </div>
+        )}
+
+        {aiExplanation && (
+          <div className="mt-4 whitespace-pre-line rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-100">
+            {aiExplanation}
+          </div>
+        )}
+      </div>
       <button
         type="button"
         onClick={() => downloadPDFReport(result)}
