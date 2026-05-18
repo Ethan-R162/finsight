@@ -58,42 +58,57 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
 }
 
 export default function ResultsCard({ result }: Props) {
-  const [aiExplanation, setAiExplanation] = useState<string | null>(null);
-  const [isExplaining, setIsExplaining] = useState(false);
-  const [aiError, setAiError] = useState<string | null>(null);
 
-  async function handleExplainResults() {
+  const [coachQuestion, setCoachQuestion] = useState("");
+  const [coachAnswer, setCoachAnswer] = useState<string | null>(null);
+  const [isCoachLoading, setIsCoachLoading] = useState(false);
+  const [coachError, setCoachError] = useState<string | null>(null);
+
+  
+
+  async function handleAskCoach(questionOverride?: string) {
     if (!result) return;
 
-    setIsExplaining(true);
-    setAiError(null);
+    const question = questionOverride || coachQuestion;
+
+    if (!question.trim()) {
+      setCoachError("Enter a question first.");
+      return;
+    }
+
+    setIsCoachLoading(true);
+    setCoachError(null);
+    setCoachAnswer(null);
 
     try {
-      const response = await fetch("/api/explain", {
+      const response = await fetch("/api/coach", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(result),
+        body: JSON.stringify({
+          question,
+          result,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to generate explanation.");
+        throw new Error(data.answer || "Failed to get coach answer.");
       }
 
-      setAiExplanation(data.explanation);
+      setCoachAnswer(data.answer);
+      setCoachQuestion(question);
     } catch (error) {
-      setAiError(
-        error instanceof Error
-          ? error.message
-          : "Failed to generate explanation."
+      setCoachError(
+        error instanceof Error ? error.message : "Failed to get coach answer."
       );
     } finally {
-      setIsExplaining(false);
+      setIsCoachLoading(false);
     }
   }
+
   if (!result) {
     return (
       <div className="min-h-full rounded-[1.35rem] bg-slate-950/80 p-6">
@@ -299,65 +314,67 @@ export default function ResultsCard({ result }: Props) {
           </p>
         </div>
       </div>
+
       <div className="rounded-3xl border border-teal-400/20 bg-teal-400/10 p-5">
-  <p className="text-sm uppercase tracking-[0.2em] text-teal-300">
-    Buy vs Rent NPV Model
-  </p>
+        <p className="text-sm uppercase tracking-[0.2em] text-teal-300">
+          Buy vs Rent NPV Model
+        </p>
 
-  <p className="mt-2 text-sm leading-6 text-slate-300">
-    This model compares the present value cost of renting versus buying over the
-    selected holding period.
-  </p>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          This model compares the present value cost of renting versus buying
+          over the selected holding period.
+        </p>
 
-  <div className="mt-4 grid gap-3 md:grid-cols-2">
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-        PV Cost of Renting
-      </p>
-      <p className="mt-2 text-xl font-semibold text-white">
-        {formatCurrency(result.buyRentAnalysis.rentPV)}
-      </p>
-    </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              PV Cost of Renting
+            </p>
+            <p className="mt-2 text-xl font-semibold text-white">
+              {formatCurrency(result.buyRentAnalysis.rentPV)}
+            </p>
+          </div>
 
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-        PV Cost of Buying
-      </p>
-      <p className="mt-2 text-xl font-semibold text-white">
-        {formatCurrency(result.buyRentAnalysis.buyPV)}
-      </p>
-    </div>
-  </div>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              PV Cost of Buying
+            </p>
+            <p className="mt-2 text-xl font-semibold text-white">
+              {formatCurrency(result.buyRentAnalysis.buyPV)}
+            </p>
+          </div>
+        </div>
 
-  <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-      NPV Difference
-    </p>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+            NPV Difference
+          </p>
 
-    <p
-      className={`mt-2 text-3xl font-bold ${
-        result.buyRentAnalysis.recommendation === "buy"
-          ? "text-emerald-300"
-          : "text-cyan-300"
-      }`}
-    >
-      {formatCurrency(result.buyRentAnalysis.difference)}
-    </p>
+          <p
+            className={`mt-2 text-3xl font-bold ${
+              result.buyRentAnalysis.recommendation === "buy"
+                ? "text-emerald-300"
+                : "text-cyan-300"
+            }`}
+          >
+            {formatCurrency(result.buyRentAnalysis.difference)}
+          </p>
 
-    <p className="mt-3 text-sm leading-6 text-slate-300">
-      {result.buyRentAnalysis.summary}
-    </p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            {result.buyRentAnalysis.summary}
+          </p>
 
-    <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-      <p className="text-sm text-slate-300">
-        Model recommendation:{" "}
-        <span className="font-semibold uppercase text-teal-300">
-          {result.buyRentAnalysis.recommendation}
-        </span>
-      </p>
-    </div>
-  </div>
-</div>
+          <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+            <p className="text-sm text-slate-300">
+              Model recommendation:{" "}
+              <span className="font-semibold uppercase text-teal-300">
+                {result.buyRentAnalysis.recommendation}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-3xl border border-purple-400/20 bg-purple-400/10 p-5">
         <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
           Sensitivity Analysis
@@ -376,9 +393,6 @@ export default function ResultsCard({ result }: Props) {
             <p className="mt-2 text-lg font-semibold text-red-300">
               {formatCurrency(result.sensitivityAnalysis.downsideCase)}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
-              1% growth / 7% discount
-            </p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
@@ -388,9 +402,6 @@ export default function ResultsCard({ result }: Props) {
             <p className="mt-2 text-lg font-semibold text-cyan-300">
               {formatCurrency(result.sensitivityAnalysis.baseCase)}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
-              3% growth / 5% discount
-            </p>
           </div>
 
           <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
@@ -399,9 +410,6 @@ export default function ResultsCard({ result }: Props) {
             </p>
             <p className="mt-2 text-lg font-semibold text-emerald-300">
               {formatCurrency(result.sensitivityAnalysis.upsideCase)}
-            </p>
-            <p className="mt-1 text-xs text-slate-500">
-              4% growth / 4% discount
             </p>
           </div>
         </div>
@@ -471,7 +479,7 @@ export default function ResultsCard({ result }: Props) {
         </p>
 
         <p className="mt-2 text-sm leading-6 text-slate-300">
-          This simulation runs 1,000 randomized cases by changing income growth,
+          This simulation runs randomized cases by changing income growth,
           discount rate, investment return, and expense growth assumptions.
         </p>
 
@@ -558,38 +566,68 @@ export default function ResultsCard({ result }: Props) {
           </div>
         </div>
       </div>
-      <div className="rounded-3xl border border-fuchsia-400/20 bg-fuchsia-400/10 p-5">
-        <p className="text-sm uppercase tracking-[0.2em] text-fuchsia-300">
-          AI Explanation Layer
-        </p>
 
-        <p className="mt-2 text-sm leading-6 text-slate-300">
-          Generate a plain-English analyst summary of the model output. The AI
-          explains the results, but the financial calculations still come from
-          the transparent model.
-        </p>
+      <div className="rounded-3xl border border-indigo-400/20 bg-indigo-400/10 p-5">
+  <p className="text-sm uppercase tracking-[0.2em] text-indigo-300">
+    FInsight AI Model Coach
+  </p>
 
-        <button
-          type="button"
-          onClick={handleExplainResults}
-          disabled={isExplaining}
-          className="mt-4 w-full rounded-xl bg-gradient-to-r from-fuchsia-600 via-cyan-500 to-emerald-500 p-3 font-semibold text-white shadow-lg shadow-fuchsia-500/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isExplaining ? "Generating Explanation..." : "Explain My Results with AI"}
-        </button>
+  <p className="mt-2 text-sm leading-6 text-slate-300">
+    Use the AI Coach to explain your results, walk through formulas, clarify
+    assumptions, and understand the financial model step by step.
+  </p>
 
-        {aiError && (
+        <div className="mt-4 grid gap-2 md:grid-cols-2">
+          {[
+            "Explain my full results step by step.",,
+            "Walk me through the Monte Carlo simulation.",
+            "What does the Buy vs Rent NPV model mean?",
+            "Which assumption matters most?",
+            "Explain sensitivity analysis.",
+            "Why does the discount rate matter?",
+          ].map((question) => (
+            <button
+              key={question}
+              type="button"
+              onClick={() => handleAskCoach(question)}
+              className="rounded-xl border border-white/10 bg-slate-950/50 p-3 text-left text-sm text-slate-200 transition hover:border-indigo-300/40 hover:bg-indigo-400/10"
+            >
+              {question}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3">
+          <textarea
+            value={coachQuestion}
+            onChange={(event) => setCoachQuestion(event.target.value)}
+            placeholder="Ask a question about your model results..."
+            className="min-h-24 w-full rounded-xl border border-white/10 bg-slate-950/70 p-3 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-indigo-300 focus:ring-4 focus:ring-indigo-400/10"
+          />
+
+          <button
+            type="button"
+            onClick={() => handleAskCoach()}
+            disabled={isCoachLoading}
+            className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-cyan-500 to-emerald-500 p-3 font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isCoachLoading ? "Thinking..." : "Ask AI Coach"}
+          </button>
+        </div>
+
+        {coachError && (
           <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-400/10 p-4 text-sm text-red-200">
-            {aiError}
+            {coachError}
           </div>
         )}
 
-        {aiExplanation && (
+        {coachAnswer && (
           <div className="mt-4 whitespace-pre-line rounded-2xl border border-white/10 bg-slate-950/60 p-4 text-sm leading-6 text-slate-100">
-            {aiExplanation}
+            {coachAnswer}
           </div>
         )}
       </div>
+
       <button
         type="button"
         onClick={() => downloadPDFReport(result)}
