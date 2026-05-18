@@ -94,6 +94,16 @@ export type SensitivityAnalysis = {
   downsideCase: number;
   upsideCase: number;
 };
+export type MonteCarloResult = {
+  simulations: number;
+  probabilityPositive: number;
+  tenthPercentile: number;
+  median: number;
+  ninetiethPercentile: number;
+  averageNetPosition: number;
+  worstCase: number;
+  bestCase: number;
+};
 export type FinancialResult = {
   incomePV: number;
   assetValue: number;
@@ -105,4 +115,5 @@ export type FinancialResult = {
   actionPlan: string[];
   scenarioComparison: ScenarioComparison;
   sensitivityAnalysis: SensitivityAnalysis;
+  monteCarloResult: MonteCarloResult;
 };

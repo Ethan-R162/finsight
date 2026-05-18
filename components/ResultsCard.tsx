@@ -22,6 +22,7 @@ function formatCurrency(value: number): string {
     maximumFractionDigits: 0,
   }).format(value);
 }
+
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(0)}%`;
 }
@@ -202,163 +203,275 @@ export default function ResultsCard({ result }: Props) {
           {result.recommendation}
         </p>
       </div>
-      <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5">
-  <p className="text-sm uppercase tracking-[0.2em] text-emerald-300">
-    Priority Action Plan
-  </p>
 
-  <div className="mt-4 space-y-3">
-    {result.actionPlan.map((action, index) => (
-      <div
-        key={action}
-        className="flex gap-3 rounded-2xl border border-white/10 bg-slate-950/50 p-4"
-      >
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-sm font-bold text-emerald-300">
-          {index + 1}
+      <div className="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5">
+        <p className="text-sm uppercase tracking-[0.2em] text-emerald-300">
+          Priority Action Plan
+        </p>
+
+        <div className="mt-4 space-y-3">
+          {result.actionPlan.map((action, index) => (
+            <div
+              key={action}
+              className="flex gap-3 rounded-2xl border border-white/10 bg-slate-950/50 p-4"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-400/20 text-sm font-bold text-emerald-300">
+                {index + 1}
+              </div>
+
+              <p className="text-sm leading-6 text-slate-100">{action}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-3xl border border-blue-400/20 bg-blue-400/10 p-5">
+        <p className="text-sm uppercase tracking-[0.2em] text-blue-300">
+          Scenario Comparison
+        </p>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Current Plan
+            </p>
+            <p className="mt-2 text-xl font-semibold text-white">
+              {formatCurrency(result.scenarioComparison.currentNetPosition)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Improved Plan
+            </p>
+            <p className="mt-2 text-xl font-semibold text-emerald-300">
+              {formatCurrency(result.scenarioComparison.improvedNetPosition)}
+            </p>
+          </div>
         </div>
 
-        <p className="text-sm leading-6 text-slate-100">{action}</p>
+        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+            Difference
+          </p>
+          <p className="mt-2 text-2xl font-bold text-cyan-300">
+            {formatCurrency(result.scenarioComparison.difference)}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            {result.scenarioComparison.summary}
+          </p>
+        </div>
       </div>
-    ))}
-  </div>
-</div>
-<div className="rounded-3xl border border-blue-400/20 bg-blue-400/10 p-5">
-  <p className="text-sm uppercase tracking-[0.2em] text-blue-300">
-    Scenario Comparison
-  </p>
-  <div className="rounded-3xl border border-purple-400/20 bg-purple-400/10 p-5">
-  <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
-    Sensitivity Analysis
-  </p>
 
-  <p className="mt-2 text-sm leading-6 text-slate-300">
-    This table shows how net position changes under different income growth
-    and discount rate assumptions.
-  </p>
+      <div className="rounded-3xl border border-purple-400/20 bg-purple-400/10 p-5">
+        <p className="text-sm uppercase tracking-[0.2em] text-purple-300">
+          Sensitivity Analysis
+        </p>
 
-  <div className="mt-4 grid gap-3 md:grid-cols-3">
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-        Downside Case
-      </p>
-      <p className="mt-2 text-lg font-semibold text-red-300">
-        {formatCurrency(result.sensitivityAnalysis.downsideCase)}
-      </p>
-      <p className="mt-1 text-xs text-slate-500">1% growth / 7% discount</p>
-    </div>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          This table shows how net position changes under different income
+          growth and discount rate assumptions.
+        </p>
 
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-        Base Case
-      </p>
-      <p className="mt-2 text-lg font-semibold text-cyan-300">
-        {formatCurrency(result.sensitivityAnalysis.baseCase)}
-      </p>
-      <p className="mt-1 text-xs text-slate-500">3% growth / 5% discount</p>
-    </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Downside Case
+            </p>
+            <p className="mt-2 text-lg font-semibold text-red-300">
+              {formatCurrency(result.sensitivityAnalysis.downsideCase)}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              1% growth / 7% discount
+            </p>
+          </div>
 
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-        Upside Case
-      </p>
-      <p className="mt-2 text-lg font-semibold text-emerald-300">
-        {formatCurrency(result.sensitivityAnalysis.upsideCase)}
-      </p>
-      <p className="mt-1 text-xs text-slate-500">4% growth / 4% discount</p>
-    </div>
-  </div>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Base Case
+            </p>
+            <p className="mt-2 text-lg font-semibold text-cyan-300">
+              {formatCurrency(result.sensitivityAnalysis.baseCase)}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              3% growth / 5% discount
+            </p>
+          </div>
 
-  <div className="mt-5 overflow-x-auto">
-    <table className="w-full min-w-[520px] border-collapse text-sm">
-      <thead>
-        <tr>
-          <th className="border border-white/10 bg-slate-950/70 p-3 text-left text-slate-400">
-            Income Growth
-          </th>
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Upside Case
+            </p>
+            <p className="mt-2 text-lg font-semibold text-emerald-300">
+              {formatCurrency(result.sensitivityAnalysis.upsideCase)}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              4% growth / 4% discount
+            </p>
+          </div>
+        </div>
 
-          {result.sensitivityAnalysis.discountRates.map((rate) => (
-            <th
-              key={rate}
-              className="border border-white/10 bg-slate-950/70 p-3 text-right text-slate-400"
-            >
-              {formatPercent(rate)} Discount
-            </th>
-          ))}
-        </tr>
-      </thead>
+        <div className="mt-5 overflow-x-auto">
+          <table className="w-full min-w-[520px] border-collapse text-sm">
+            <thead>
+              <tr>
+                <th className="border border-white/10 bg-slate-950/70 p-3 text-left text-slate-400">
+                  Income Growth
+                </th>
 
-      <tbody>
-        {result.sensitivityAnalysis.incomeGrowthRates.map((growthRate) => (
-          <tr key={growthRate}>
-            <td className="border border-white/10 bg-slate-950/50 p-3 font-medium text-slate-300">
-              {formatPercent(growthRate)}
-            </td>
+                {result.sensitivityAnalysis.discountRates.map((rate) => (
+                  <th
+                    key={rate}
+                    className="border border-white/10 bg-slate-950/70 p-3 text-right text-slate-400"
+                  >
+                    {formatPercent(rate)} Discount
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-            {result.sensitivityAnalysis.discountRates.map((discountRate) => {
-              const cell = result.sensitivityAnalysis.table.find(
-                (item) =>
-                  item.incomeGrowthRate === growthRate &&
-                  item.discountRate === discountRate
-              );
+            <tbody>
+              {result.sensitivityAnalysis.incomeGrowthRates.map(
+                (growthRate) => (
+                  <tr key={growthRate}>
+                    <td className="border border-white/10 bg-slate-950/50 p-3 font-medium text-slate-300">
+                      {formatPercent(growthRate)}
+                    </td>
 
-              const value = cell?.netPosition ?? 0;
+                    {result.sensitivityAnalysis.discountRates.map(
+                      (discountRate) => {
+                        const cell = result.sensitivityAnalysis.table.find(
+                          (item) =>
+                            item.incomeGrowthRate === growthRate &&
+                            item.discountRate === discountRate
+                        );
 
-              return (
-                <td
-                  key={`${growthRate}-${discountRate}`}
-                  className={`border border-white/10 bg-slate-950/40 p-3 text-right ${
-                    value >= 0 ? "text-emerald-300" : "text-red-300"
-                  }`}
-                >
-                  {formatCurrency(value)}
-                </td>
-              );
-            })}
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-</div>
-  <div className="mt-4 grid gap-3 md:grid-cols-2">
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-        Current Plan
-      </p>
-      <p className="mt-2 text-xl font-semibold text-white">
-        {formatCurrency(result.scenarioComparison.currentNetPosition)}
-      </p>
-    </div>
+                        const value = cell?.netPosition ?? 0;
 
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-      <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-        Improved Plan
-      </p>
-      <p className="mt-2 text-xl font-semibold text-emerald-300">
-        {formatCurrency(result.scenarioComparison.improvedNetPosition)}
-      </p>
-    </div>
-  </div>
+                        return (
+                          <td
+                            key={`${growthRate}-${discountRate}`}
+                            className={`border border-white/10 bg-slate-950/40 p-3 text-right ${
+                              value >= 0
+                                ? "text-emerald-300"
+                                : "text-red-300"
+                            }`}
+                          >
+                            {formatCurrency(value)}
+                          </td>
+                        );
+                      }
+                    )}
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
-  <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-    <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
-      Difference
-    </p>
-    <p className="mt-2 text-2xl font-bold text-cyan-300">
-      {formatCurrency(result.scenarioComparison.difference)}
-    </p>
-    <p className="mt-3 text-sm leading-6 text-slate-300">
-      {result.scenarioComparison.summary}
-    </p>
-  </div>
-</div>
-<button
-  type="button"
-  onClick={() => downloadTextReport(result)}
-  className="w-full rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 p-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01]"
->
-  Download Report
-</button>
+      <div className="rounded-3xl border border-orange-400/20 bg-orange-400/10 p-5">
+        <p className="text-sm uppercase tracking-[0.2em] text-orange-300">
+          Monte Carlo Simulation
+        </p>
+
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          This simulation runs 1,000 randomized cases by changing income growth,
+          discount rate, investment return, and expense growth assumptions.
+        </p>
+
+        <div className="mt-4 rounded-3xl border border-white/10 bg-slate-950/50 p-5">
+          <p className="text-sm text-slate-400">
+            Probability of Positive Net Position
+          </p>
+
+          <div className="mt-2 flex items-end gap-2">
+            <p className="text-5xl font-bold text-orange-300">
+              {formatPercent(result.monteCarloResult.probabilityPositive)}
+            </p>
+
+            <p className="pb-2 text-sm text-slate-500">
+              across {result.monteCarloResult.simulations} simulations
+            </p>
+          </div>
+
+          <div className="mt-4 h-3 rounded-full bg-white/10">
+            <div
+              className="h-3 rounded-full bg-gradient-to-r from-orange-500 via-cyan-400 to-emerald-400"
+              style={{
+                width: `${result.monteCarloResult.probabilityPositive * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              10th Percentile
+            </p>
+            <p className="mt-2 text-lg font-semibold text-red-300">
+              {formatCurrency(result.monteCarloResult.tenthPercentile)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Median
+            </p>
+            <p className="mt-2 text-lg font-semibold text-cyan-300">
+              {formatCurrency(result.monteCarloResult.median)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              90th Percentile
+            </p>
+            <p className="mt-2 text-lg font-semibold text-emerald-300">
+              {formatCurrency(result.monteCarloResult.ninetiethPercentile)}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Average Outcome
+            </p>
+            <p className="mt-2 text-lg font-semibold text-white">
+              {formatCurrency(result.monteCarloResult.averageNetPosition)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Worst Case
+            </p>
+            <p className="mt-2 text-lg font-semibold text-red-300">
+              {formatCurrency(result.monteCarloResult.worstCase)}
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+              Best Case
+            </p>
+            <p className="mt-2 text-lg font-semibold text-emerald-300">
+              {formatCurrency(result.monteCarloResult.bestCase)}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={() => downloadTextReport(result)}
+        className="w-full rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 p-3 font-semibold text-white shadow-lg shadow-cyan-500/20 transition hover:scale-[1.01]"
+      >
+        Download Report
+      </button>
+
       <p className="text-xs leading-5 text-slate-500">
         FInsight is for educational purposes only and does not provide
         financial, investment, tax, or legal advice.

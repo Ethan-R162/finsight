@@ -63,7 +63,28 @@ Improved Plan Net Position: ${formatCurrency(
 Difference: ${formatCurrency(result.scenarioComparison.difference)}
 
 ${result.scenarioComparison.summary}
+----------------------------------------
+MONTE CARLO SIMULATION
+----------------------------------------
 
+Simulations Run: ${result.monteCarloResult.simulations}
+Probability of Positive Net Position: ${(
+    result.monteCarloResult.probabilityPositive * 100
+  ).toFixed(0)}%
+
+10th Percentile Net Position: ${formatCurrency(
+    result.monteCarloResult.tenthPercentile
+  )}
+Median Net Position: ${formatCurrency(result.monteCarloResult.median)}
+90th Percentile Net Position: ${formatCurrency(
+    result.monteCarloResult.ninetiethPercentile
+  )}
+
+Average Net Position: ${formatCurrency(
+    result.monteCarloResult.averageNetPosition
+  )}
+Worst Case: ${formatCurrency(result.monteCarloResult.worstCase)}
+Best Case: ${formatCurrency(result.monteCarloResult.bestCase)}
 ----------------------------------------
 DISCLAIMER
 ----------------------------------------
