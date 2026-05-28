@@ -56,17 +56,6 @@ function FInsightLogo() {
   );
 }
 
-function MethodologyButton() {
-  return (
-    <Link
-      href="/methodology"
-      className="inline-flex items-center justify-center rounded-xl border border-cyan-400/30 bg-slate-950/60 px-5 py-3 text-sm font-semibold text-cyan-300 transition hover:bg-cyan-400/10"
-    >
-      View Methodology
-    </Link>
-  );
-}
-
 function InputLandingPage({
   form,
   setForm,
@@ -93,10 +82,6 @@ function InputLandingPage({
             time horizon, and adjustable model assumptions to generate a
             financial recommendation with sensitivity and Monte Carlo outputs.
           </p>
-
-          <div className="mt-6">
-            <MethodologyButton />
-          </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur">
@@ -175,8 +160,6 @@ function DashboardPage({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              <MethodologyButton />
-
               <button
                 type="button"
                 onClick={onBackToEdit}
