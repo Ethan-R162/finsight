@@ -380,35 +380,42 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
   }
 
   function renderNumberInput({
-    name,
-    label,
-    stepValue,
-    min,
-    max,
-  }: {
-    name: NumberFieldName;
-    label: string;
-    stepValue?: string;
-    min?: string;
-    max?: string;
-  }) {
-    return (
-      <div>
-        <label className={labelClass}>{label}</label>
-        <input
-          className={inputClass}
-          type="text"
-          inputMode="decimal"
-          value={numberValue(name)}
-          onChange={(e) => updateNumberField(name, e.target.value)}
-          onBlur={() => commitNumberField(name)}
-          step={stepValue}
-          min={min}
-          max={max}
-        />
-      </div>
-    );
-  }
+  name,
+  label,
+  helperText,
+  stepValue,
+  min,
+  max,
+}: {
+  name: NumberFieldName;
+  label: string;
+  helperText?: string;
+  stepValue?: string;
+  min?: string;
+  max?: string;
+}) {
+  return (
+    <div>
+      <label className={labelClass}>{label}</label>
+
+      <input
+        className={inputClass}
+        type="text"
+        inputMode="decimal"
+        value={numberValue(name)}
+        onChange={(e) => updateNumberField(name, e.target.value)}
+        onBlur={() => commitNumberField(name)}
+        step={stepValue}
+        min={min}
+        max={max}
+      />
+
+      {helperText && (
+        <p className="mt-1 text-xs leading-5 text-slate-500">{helperText}</p>
+      )}
+    </div>
+  );
+}
 
   function nextStep() {
     if (step < totalSteps) {
@@ -616,6 +623,8 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
                 {renderNumberInput({
                   name: "holdingPeriodYears",
                   label: "Holding Period Years",
+                  helperText:
+                    "How many years you expect to own the home before selling or moving.",
                 })}
                 {renderNumberInput({
                   name: "homeAppreciationRate",
@@ -818,10 +827,18 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
               label: "Emergency Fund",
             })}
             {renderNumberInput({ name: "stockValue", label: "Stock Value" })}
-            {renderNumberInput({ name: "bondValue", label: "Bond Value" })}
+            {renderNumberInput({
+              name: "bondValue",
+              label: "Current Bond Market Value",
+              helperText:
+                "Enter the current estimated market value of your bond holdings, not the original purchase price or face value.",
+            })}
+
             {renderNumberInput({
               name: "realEstateValue",
-              label: "Real Estate Value",
+              label: "Current Real Estate Market Value",
+              helperText:
+                "Enter today's estimated market value of owned real estate, not the mortgage balance or original purchase price.",
             })}
           </div>
         </section>
@@ -848,6 +865,8 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
             {renderNumberInput({
               name: "debtInterestRate",
               label: "Debt Interest Rate (%)",
+              helperText:
+                "Used to estimate the present value of remaining debt payments. Higher rates make debt more costly.",
               stepValue: "0.1",
             })}
             {renderNumberInput({
@@ -906,6 +925,11 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
               <option value="10_20_years">10-20 years</option>
               <option value="20_plus_years">20+ years</option>
             </select>
+
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              Used in the recommendation logic. Shorter timelines favor liquidity and
+              lower risk, while longer timelines allow more growth-oriented strategies.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-cyan-400/20 bg-cyan-400/10 p-4 text-sm leading-6 text-cyan-100">
