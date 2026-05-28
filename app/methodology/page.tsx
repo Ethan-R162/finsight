@@ -99,14 +99,14 @@ export default function MethodologyPage() {
       title: "Expense Present Value",
       formula: "Expense PV = Σ Projected Expenses_t / (1 + discount rate)^t",
       description:
-        "Monthly expenses are annualized, grown over time, and discounted back into today’s dollars.",
+        "Monthly expenses are annualized, adjusted by city type, grown over time, and discounted back into today’s dollars.",
     },
     {
       title: "Financial Readiness Score",
       formula:
-        "Score = Emergency Fund + Debt Health + Asset Strength + Goal Fit",
+        "Score = Liquid Safety + Debt Health + Asset Strength + Goal Fit",
       description:
-        "The final score is a 100-point measure. The first three categories measure general financial health, while Goal Fit comes from the selected goal model.",
+        "The final score is a 100-point measure. Liquid Safety is based on combined savings and emergency fund, while Debt Health, Asset Strength, and Goal Fit measure broader readiness.",
     },
     {
       title: "Goal Fit Conversion",
@@ -158,9 +158,9 @@ export default function MethodologyPage() {
         "The investing model checks whether the user is actually ready to invest by testing liquidity, high-interest debt, monthly surplus, investable assets, risk tolerance, and time horizon.",
       formulas: [
         "Investable Assets = Savings + Stocks + Bonds",
-        "Emergency Fund Gap = 3 Months of Expenses - Emergency Fund",
+        "Liquid Safety Gap = 3 Months of Expenses - (Savings + Emergency Fund)",
         "Monthly Surplus = Monthly Income - Monthly Expenses - Debt Payments",
-        "Liquidity Margin of Safety = Emergency Fund / Monthly Expenses",
+        "Liquidity Margin of Safety = (Savings + Emergency Fund) / Monthly Expenses",
       ],
     },
     {
@@ -190,6 +190,7 @@ export default function MethodologyPage() {
     "Retirement need uses a 25x projected annual expense multiple.",
     "Scholarship ROI uses a 10-year present value window for income benefits.",
     "City type adjustment: city users have higher projected expenses, suburban users use the baseline, and rural users have lower projected expenses.",
+    "Bond value and real estate value are entered as current market values, not original cost, face value, or NPV.",
   ];
 
   const limitations = [

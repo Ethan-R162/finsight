@@ -340,7 +340,58 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
   function numberValue(name: NumberFieldName) {
     return draftNumbers[name] ?? String(form[name] ?? 0);
   }
+function sanitizeNumberField(name: NumberFieldName, value: number): number {
+  let cleanValue = Number.isFinite(value) ? value : 0;
 
+  cleanValue = Math.max(0, cleanValue);
+
+  const percentFields: NumberFieldName[] = [
+    "debtInterestRate",
+    "creditCardAPR",
+    "scholarshipPercent",
+    "expectedIncomeIncrease",
+    "downPaymentPercent",
+    "mortgageRate",
+    "homeAppreciationRate",
+    "propertyTaxRate",
+    "maintenanceRate",
+    "closingCostPercent",
+    "discountRate",
+    "baseIncomeGrowthRate",
+    "expenseGrowthRate",
+    "expectedInvestmentReturn",
+  ];
+
+  if (percentFields.includes(name)) {
+    cleanValue = Math.min(100, cleanValue);
+  }
+
+  if (name === "monteCarloRuns") {
+    cleanValue = Math.max(100, Math.min(10000, Math.round(cleanValue)));
+  }
+
+  if (name === "age") {
+    cleanValue = Math.min(120, Math.round(cleanValue));
+  }
+
+  if (name === "retirementAge") {
+    cleanValue = Math.min(120, Math.round(cleanValue));
+  }
+
+  if (name === "dependents") {
+    cleanValue = Math.min(20, Math.round(cleanValue));
+  }
+
+  if (name === "debtYearsRemaining") {
+    cleanValue = Math.min(50, cleanValue);
+  }
+
+  if (name === "holdingPeriodYears") {
+    cleanValue = Math.min(50, cleanValue);
+  }
+
+  return cleanValue;
+}
   function updateNumberField(name: NumberFieldName, value: string) {
     setDraftNumbers((prev) => ({
       ...prev,
@@ -356,28 +407,30 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
   }
 
   function commitNumberField(name: NumberFieldName) {
-    const rawValue = draftNumbers[name];
+  const rawValue = draftNumbers[name];
 
-    if (rawValue === undefined) return;
+  if (rawValue === undefined) return;
 
-    const cleanValue = rawValue.trim();
+  const cleanValue = rawValue.trim();
 
-    const finalValue =
-      cleanValue === "" || Number.isNaN(Number(cleanValue))
-        ? 0
-        : Number(cleanValue);
+  const parsedValue =
+    cleanValue === "" || Number.isNaN(Number(cleanValue))
+      ? 0
+      : Number(cleanValue);
 
-    setForm((prev) => ({
-      ...prev,
-      [name]: finalValue,
-    }));
+  const finalValue = sanitizeNumberField(name, parsedValue);
 
-    setDraftNumbers((prev) => {
-      const copy = { ...prev };
-      delete copy[name];
-      return copy;
-    });
-  }
+  setForm((prev) => ({
+    ...prev,
+    [name]: finalValue,
+  }));
+
+  setDraftNumbers((prev) => {
+    const copy = { ...prev };
+    delete copy[name];
+    return copy;
+  });
+}
 
   function renderNumberInput({
   name,
@@ -825,6 +878,8 @@ export default function FinancialForm({ form, setForm, onCalculate }: Props) {
             {renderNumberInput({
               name: "emergencyFund",
               label: "Emergency Fund",
+              helperText:
+               "Cash specifically set aside for emergencies. The model also counts general savings as part of your liquid safety cushion.",
             })}
             {renderNumberInput({ name: "stockValue", label: "Stock Value" })}
             {renderNumberInput({
