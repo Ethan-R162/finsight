@@ -1,4 +1,8 @@
 import { FinancialInput } from "@/types/financial";
+import {
+  getCityExpenseGrowthAdjustment,
+  getCityExpenseMultiplier,
+} from "@/lib/geography";
 
 export function presentValueOfAnnuity(
   payment: number,
@@ -96,26 +100,35 @@ export function calculateDebtPV(input: FinancialInput): number {
 }
 
 export function calculateExpensePV(input: FinancialInput): number {
-  const yearsUntilRetirement = Math.max(input.retirementAge - input.age, 0);
+  const years = Math.max(input.retirementAge - input.age, 0);
 
-  const discountRate = percentToDecimal(input.discountRate);
-  const expenseGrowthRate = percentToDecimal(input.expenseGrowthRate);
-
-  const annualExpenses = input.monthlyExpenses * 12;
-
-  let totalPV = 0;
-
-  for (let year = 1; year <= yearsUntilRetirement; year++) {
-    const projectedExpenses =
-      annualExpenses * Math.pow(1 + expenseGrowthRate, year);
-
-    const discountedExpenses =
-      projectedExpenses / Math.pow(1 + discountRate, year);
-
-    totalPV += discountedExpenses;
+  if (years === 0) {
+    return 0;
   }
 
-  return totalPV;
+  const cityExpenseMultiplier = getCityExpenseMultiplier(input.cityType);
+  const cityGrowthAdjustment = getCityExpenseGrowthAdjustment(input.cityType);
+
+  const adjustedAnnualExpenses =
+    input.monthlyExpenses * 12 * cityExpenseMultiplier;
+
+  const discountRate = input.discountRate / 100;
+
+  const expenseGrowthRate = Math.max(
+    -0.02,
+    input.expenseGrowthRate / 100 + cityGrowthAdjustment
+  );
+
+  let presentValue = 0;
+
+  for (let year = 1; year <= years; year += 1) {
+    const projectedExpense =
+      adjustedAnnualExpenses * Math.pow(1 + expenseGrowthRate, year);
+
+    presentValue += projectedExpense / Math.pow(1 + discountRate, year);
+  }
+
+  return presentValue;
 }
 
 export function calculateNetPosition(input: FinancialInput): number {

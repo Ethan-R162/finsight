@@ -4,13 +4,25 @@ function getMonthlyIncome(input: FinancialInput) {
   return input.income > 0 ? input.income / 12 : 0;
 }
 
-function getEmergencyFundMonths(input: FinancialInput) {
-  if (input.monthlyExpenses <= 0) return 0;
-  return input.emergencyFund / input.monthlyExpenses;
+function getLiquidSafetyMonths(input: FinancialInput) {
+  const monthlyExpenses = Math.max(input.monthlyExpenses, 1);
+  const liquidSafetyAssets = input.savings + input.emergencyFund;
+
+  return liquidSafetyAssets / monthlyExpenses;
+}
+
+function getLiquidSafetyAssets(input: FinancialInput) {
+  return input.savings + input.emergencyFund;
 }
 
 function isHousingGoal(input: FinancialInput) {
   return input.goal === "buy_house" || input.goal === "rent_vs_buy";
+}
+
+function getCityTypeLabel(input: FinancialInput) {
+  if (input.cityType === "city") return "City";
+  if (input.cityType === "suburban") return "Suburban";
+  return "Rural";
 }
 
 export function generateModelAudit(
@@ -22,39 +34,51 @@ export function generateModelAudit(
   const items: AuditItem[] = [];
 
   const monthlyIncome = getMonthlyIncome(input);
-  const emergencyFundMonths = getEmergencyFundMonths(input);
+  const liquidSafetyAssets = getLiquidSafetyAssets(input);
+  const liquidSafetyMonths = getLiquidSafetyMonths(input);
+
   const expenseRatio =
     monthlyIncome > 0 ? input.monthlyExpenses / monthlyIncome : 0;
+
   const debtPaymentRatio =
     monthlyIncome > 0 ? input.debtPayment / monthlyIncome : 0;
 
-  if (emergencyFundMonths >= 6) {
+  if (liquidSafetyMonths >= 6) {
     items.push({
       severity: "strong",
-      title: "Strong emergency fund",
+      title: "Strong liquid safety cushion",
       message:
-        "Your emergency fund covers at least six months of expenses, which gives the model more stability.",
+        "Your combined savings and emergency fund cover at least six months of expenses, which gives the model more stability.",
     });
-  } else if (emergencyFundMonths >= 3) {
+  } else if (liquidSafetyMonths >= 3) {
     items.push({
       severity: "info",
-      title: "Acceptable emergency fund",
+      title: "Acceptable liquid safety cushion",
       message:
-        "Your emergency fund covers at least three months of expenses, but building toward six months would improve resilience.",
+        "Your combined savings and emergency fund cover at least three months of expenses, but building toward six months would improve resilience.",
     });
-  } else if (emergencyFundMonths >= 1) {
+  } else if (liquidSafetyMonths >= 1) {
     items.push({
       severity: "warning",
-      title: "Emergency fund is thin",
+      title: "Liquid safety cushion is thin",
       message:
-        "Your emergency fund covers less than three months of expenses, so the model may be more exposed to short-term shocks.",
+        "Your combined savings and emergency fund cover less than three months of expenses, so the model may be more exposed to short-term shocks.",
     });
   } else {
     items.push({
       severity: "risk",
-      title: "Very low emergency fund",
+      title: "Very low liquid safety cushion",
       message:
-        "Your emergency fund covers less than one month of expenses. This is a major risk flag before taking on large financial goals.",
+        "Your combined savings and emergency fund cover less than one month of expenses. This is a major risk flag before taking on large financial goals.",
+    });
+  }
+
+  if (input.emergencyFund <= 0 && input.savings > 0) {
+    items.push({
+      severity: "info",
+      title: "Emergency cash is included in savings",
+      message:
+        "The audit treats savings and emergency fund together as liquid safety assets, so strong savings can still support emergency readiness.",
     });
   }
 
@@ -81,6 +105,29 @@ export function generateModelAudit(
     });
   }
 
+  if (input.cityType === "city") {
+    items.push({
+      severity: "info",
+      title: "City expense adjustment applied",
+      message:
+        "City profiles use a higher projected expense assumption, which can lower net position compared with suburban or rural profiles.",
+    });
+  } else if (input.cityType === "rural") {
+    items.push({
+      severity: "info",
+      title: "Rural expense adjustment applied",
+      message:
+        "Rural profiles use a lower projected expense assumption, which can improve net position compared with city profiles.",
+    });
+  } else {
+    items.push({
+      severity: "info",
+      title: "Suburban expense baseline applied",
+      message:
+        "Suburban profiles use the baseline projected expense assumption.",
+    });
+  }
+
   if (input.creditCardDebt > 0 && input.creditCardAPR >= 15) {
     items.push({
       severity: "risk",
@@ -103,6 +150,13 @@ export function generateModelAudit(
       title: "Debt payments are elevated",
       message:
         "Monthly debt payments are above 36% of monthly income, which may limit flexibility.",
+    });
+  } else if (input.debtPayment > 0) {
+    items.push({
+      severity: "info",
+      title: "Debt payments appear manageable",
+      message:
+        "Monthly debt payments do not appear excessive relative to income.",
     });
   }
 
@@ -131,6 +185,13 @@ export function generateModelAudit(
         title: "House price is high relative to income",
         message:
           "The target house price is more than 5x annual income, so affordability should be reviewed carefully.",
+      });
+    } else {
+      items.push({
+        severity: "info",
+        title: "House price looks more reasonable",
+        message:
+          "The target house price appears more reasonable relative to annual income, but affordability still depends on debt, savings, and mortgage assumptions.",
       });
     }
   }
@@ -180,6 +241,16 @@ export function generateModelAudit(
       title: "Positive net position",
       message:
         "The model shows a positive net position after considering income, assets, debt, and expenses.",
+    });
+  }
+
+  if (liquidSafetyAssets > 0) {
+    items.push({
+      severity: "info",
+      title: "Liquid safety assets measured",
+      message: `The model counts savings and emergency fund together for liquidity testing. Current liquid safety assets are approximately $${Math.round(
+        liquidSafetyAssets
+      ).toLocaleString()}.`,
     });
   }
 

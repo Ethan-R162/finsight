@@ -184,11 +184,12 @@ export default function MethodologyPage() {
     "Default expense growth / inflation rate: 2.5%, adjustable by the user.",
     "Default expected investment return: 6%, adjustable by the user.",
     "Default Monte Carlo simulation count: 1,000 trials, adjustable by the user.",
-    "Emergency fund target: at least 3 months of expenses.",
+    "Liquid safety cushion target: combined savings and emergency fund should cover at least 3 months of expenses.",
     "High-interest credit card debt threshold: 15% APR.",
     "Mortgage term used for housing calculations: 30 years.",
     "Retirement need uses a 25x projected annual expense multiple.",
     "Scholarship ROI uses a 10-year present value window for income benefits.",
+    "City type adjustment: city users have higher projected expenses, suburban users use the baseline, and rural users have lower projected expenses.",
   ];
 
   const limitations = [

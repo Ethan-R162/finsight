@@ -4,18 +4,31 @@ function clampScore(score: number): number {
   return Math.max(0, Math.min(25, Math.round(score)));
 }
 
+function clampTotalScore(score: number): number {
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function getLiquidSafetyAssets(input: FinancialInput): number {
+  return input.savings + input.emergencyFund;
+}
+
+function getLiquidSafetyMonths(input: FinancialInput): number {
+  if (input.monthlyExpenses <= 0) return 0;
+
+  return getLiquidSafetyAssets(input) / input.monthlyExpenses;
+}
+
 export function calculateFinancialScore(
   input: FinancialInput,
   netPosition: number,
   assetValue: number,
   debtPV: number
 ): ScoreBreakdown {
-  const emergencyFundMonths =
-    input.monthlyExpenses > 0
-      ? input.emergencyFund / input.monthlyExpenses
-      : 0;
+  const liquidSafetyAssets = getLiquidSafetyAssets(input);
 
-  const emergencyFundScore = clampScore((emergencyFundMonths / 6) * 25);
+  const liquidSafetyMonths = getLiquidSafetyMonths(input);
+
+  const emergencyFundScore = clampScore((liquidSafetyMonths / 6) * 25);
 
   let debtHealthScore = 25;
 
@@ -45,7 +58,7 @@ export function calculateFinancialScore(
   if (input.goal === "buy_house" || input.goal === "rent_vs_buy") {
     const downPaymentTarget = input.targetHousePrice * 0.2;
 
-    if (input.savings + input.emergencyFund >= downPaymentTarget) {
+    if (liquidSafetyAssets >= downPaymentTarget) {
       goalFitScore = 25;
     } else if (input.timeHorizon === "under_1_year") {
       goalFitScore = 8;
@@ -85,7 +98,7 @@ export function calculateFinancialScore(
   }
 
   if (input.goal === "invest_assets") {
-    if (emergencyFundMonths >= 3 && input.creditCardAPR < 15) {
+    if (liquidSafetyMonths >= 3 && input.creditCardAPR < 15) {
       goalFitScore = 22;
     } else {
       goalFitScore = 10;
@@ -94,11 +107,9 @@ export function calculateFinancialScore(
 
   goalFitScore = clampScore(goalFitScore);
 
-  const totalScore =
-    emergencyFundScore +
-    debtHealthScore +
-    assetStrengthScore +
-    goalFitScore;
+  const totalScore = clampTotalScore(
+    emergencyFundScore + debtHealthScore + assetStrengthScore + goalFitScore
+  );
 
   return {
     emergencyFundScore,
