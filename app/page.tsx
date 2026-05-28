@@ -5,7 +5,8 @@ import { useState } from "react";
 import FinancialForm from "@/components/FinancialForm";
 import ResultsCard from "@/components/ResultsCard";
 import AICoachBubble from "@/components/AICoachBubble";
-import { FinancialResult } from "@/types/financial";
+import { FinancialInput, FinancialResult } from "@/types/financial";
+import { defaultFinancialInput } from "@/lib/defaultFinancialInput";
 
 function FInsightLogo() {
   return (
@@ -67,8 +68,12 @@ function MethodologyButton() {
 }
 
 function InputLandingPage({
+  form,
+  setForm,
   onCalculate,
 }: {
+  form: FinancialInput;
+  setForm: React.Dispatch<React.SetStateAction<FinancialInput>>;
   onCalculate: (result: FinancialResult) => void;
 }) {
   return (
@@ -88,6 +93,10 @@ function InputLandingPage({
             time horizon, and adjustable model assumptions to generate a
             financial recommendation with sensitivity and Monte Carlo outputs.
           </p>
+
+          <div className="mt-6">
+            <MethodologyButton />
+          </div>
         </div>
 
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur">
@@ -120,7 +129,11 @@ function InputLandingPage({
 
       <section className="mx-auto max-w-4xl">
         <div className="rounded-3xl border border-white/10 bg-white/[0.06] p-1 shadow-2xl backdrop-blur">
-          <FinancialForm onCalculate={onCalculate} />
+          <FinancialForm
+            form={form}
+            setForm={setForm}
+            onCalculate={onCalculate}
+          />
         </div>
       </section>
     </>
@@ -129,10 +142,12 @@ function InputLandingPage({
 
 function DashboardPage({
   result,
-  onReset,
+  onBackToEdit,
+  onStartOver,
 }: {
   result: FinancialResult;
-  onReset: () => void;
+  onBackToEdit: () => void;
+  onStartOver: () => void;
 }) {
   const showHousingData =
     result.goal === "buy_house" || result.goal === "rent_vs_buy";
@@ -160,13 +175,22 @@ function DashboardPage({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row">
-              
+              <MethodologyButton />
+
               <button
                 type="button"
-                onClick={onReset}
+                onClick={onBackToEdit}
                 className="rounded-xl border border-white/10 bg-white/[0.05] px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/[0.09]"
               >
                 Back to Edit Inputs
+              </button>
+
+              <button
+                type="button"
+                onClick={onStartOver}
+                className="rounded-xl border border-red-400/30 bg-red-400/10 px-5 py-3 text-sm font-semibold text-red-300 transition hover:bg-red-400/20"
+              >
+                Start Over
               </button>
             </div>
           </div>
@@ -227,14 +251,31 @@ function DashboardPage({
       </section>
 
       <section className="rounded-3xl border border-white/10 bg-white/[0.06] p-1 shadow-2xl backdrop-blur">
-        <ResultsCard result={result} onReset={onReset} />
+        <ResultsCard result={result} onReset={onBackToEdit} />
       </section>
     </>
   );
 }
 
 export default function Home() {
+  const [form, setForm] = useState<FinancialInput>(defaultFinancialInput);
   const [result, setResult] = useState<FinancialResult | null>(null);
+  const [isEditing, setIsEditing] = useState(true);
+
+  function handleCalculate(calculatedResult: FinancialResult) {
+    setResult(calculatedResult);
+    setIsEditing(false);
+  }
+
+  function handleBackToEdit() {
+    setIsEditing(true);
+  }
+
+  function handleStartOver() {
+    setForm(defaultFinancialInput);
+    setResult(null);
+    setIsEditing(true);
+  }
 
   return (
     <main className="min-h-screen overflow-hidden bg-[#07111f] text-white">
@@ -260,10 +301,24 @@ export default function Home() {
           </div>
         </nav>
 
-        {!result ? (
-          <InputLandingPage onCalculate={setResult} />
+        {isEditing ? (
+          <InputLandingPage
+            form={form}
+            setForm={setForm}
+            onCalculate={handleCalculate}
+          />
+        ) : result ? (
+          <DashboardPage
+            result={result}
+            onBackToEdit={handleBackToEdit}
+            onStartOver={handleStartOver}
+          />
         ) : (
-          <DashboardPage result={result} onReset={() => setResult(null)} />
+          <InputLandingPage
+            form={form}
+            setForm={setForm}
+            onCalculate={handleCalculate}
+          />
         )}
       </div>
 

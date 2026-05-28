@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { Dispatch, SetStateAction } from "react";
 import {
   applyGoalWeightToRecommendation,
   applyGoalWeightToScore,
@@ -51,9 +52,9 @@ const sampleProfiles = {
       creditCardAPR: 0,
 
       targetHousePrice: 0,
-      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
+      educationCost: 0,
 
       monthlyRent: 0,
       downPaymentPercent: 20,
@@ -102,9 +103,9 @@ const sampleProfiles = {
       creditCardAPR: 22,
 
       targetHousePrice: 850000,
-      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
+      educationCost: 0,
 
       monthlyRent: 3200,
       downPaymentPercent: 8,
@@ -153,9 +154,9 @@ const sampleProfiles = {
       creditCardAPR: 19,
 
       targetHousePrice: 0,
-      educationCost: 60000,
       scholarshipPercent: 60,
       expectedIncomeIncrease: 25,
+      educationCost: 80000,
 
       monthlyRent: 0,
       downPaymentPercent: 20,
@@ -204,9 +205,9 @@ const sampleProfiles = {
       creditCardAPR: 24,
 
       targetHousePrice: 0,
-      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
+      educationCost: 0,
 
       monthlyRent: 0,
       downPaymentPercent: 20,
@@ -255,9 +256,9 @@ const sampleProfiles = {
       creditCardAPR: 0,
 
       targetHousePrice: 0,
-      educationCost: 50000,
       scholarshipPercent: 0,
       expectedIncomeIncrease: 0,
+      educationCost: 0,
 
       monthlyRent: 0,
       downPaymentPercent: 20,
@@ -288,6 +289,8 @@ const sampleProfiles = {
 >;
 
 type Props = {
+  form: FinancialInput;
+  setForm: Dispatch<SetStateAction<FinancialInput>>;
   onCalculate: (result: FinancialResult) => void;
 };
 
@@ -297,7 +300,7 @@ type NumberFieldName = {
 
 const totalSteps = 7;
 
-export default function FinancialForm({ onCalculate }: Props) {
+export default function FinancialForm({ form, setForm, onCalculate }: Props) {
   const [step, setStep] = useState(1);
   const [showDemoProfiles, setShowDemoProfiles] = useState(false);
 
@@ -305,55 +308,7 @@ export default function FinancialForm({ onCalculate }: Props) {
     Partial<Record<NumberFieldName, string>>
   >({});
 
-  const [form, setForm] = useState<FinancialInput>({
-    age: 25,
-    retirementAge: 65,
 
-    income: 75000,
-    savings: 10000,
-    emergencyFund: 5000,
-    monthlyExpenses: 3000,
-
-    stockValue: 5000,
-    bondValue: 0,
-    realEstateValue: 0,
-
-    debtPayment: 300,
-    debtInterestRate: 6,
-    debtYearsRemaining: 10,
-
-    creditCardDebt: 0,
-    creditCardAPR: 0,
-
-    dependents: 0,
-    cityType: "city",
-    occupationStatus: "employed",
-    industry: "finance",
-
-    targetHousePrice: 500000,
-    educationCost: 50000,
-    scholarshipPercent: 0,
-    expectedIncomeIncrease: 0,
-
-    monthlyRent: 2500,
-    downPaymentPercent: 20,
-    mortgageRate: 6.5,
-    holdingPeriodYears: 7,
-    homeAppreciationRate: 3,
-    propertyTaxRate: 1.2,
-    maintenanceRate: 1,
-    closingCostPercent: 3,
-
-    discountRate: 5,
-    baseIncomeGrowthRate: 2,
-    expenseGrowthRate: 2.5,
-    expectedInvestmentReturn: 6,
-    monteCarloRuns: 1000,
-
-    riskTolerance: "risk_neutral",
-    timeHorizon: "5_10_years",
-    goal: "buy_house",
-  });
 
   const inputClass =
     "mt-1 w-full rounded-xl border border-white/10 bg-slate-900/80 p-3 text-white placeholder:text-slate-500 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-400/10";
