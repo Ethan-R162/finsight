@@ -19,12 +19,6 @@ function isHousingGoal(input: FinancialInput) {
   return input.goal === "buy_house" || input.goal === "rent_vs_buy";
 }
 
-function getCityTypeLabel(input: FinancialInput) {
-  if (input.cityType === "city") return "City";
-  if (input.cityType === "suburban") return "Suburban";
-  return "Rural";
-}
-
 export function generateModelAudit(
   input: FinancialInput,
   netPosition: number,
