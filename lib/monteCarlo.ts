@@ -1,5 +1,9 @@
 import { FinancialInput, MonteCarloResult } from "@/types/financial";
 import { presentValueOfAnnuity } from "@/lib/calculations";
+import {
+  getCityExpenseGrowthAdjustment,
+  getCityExpenseMultiplier,
+} from "@/lib/geography";
 
 function randomNormal(mean: number, standardDeviation: number): number {
   let u = 0;
@@ -51,20 +55,43 @@ function normalizeIncomeGrowthRate(rawIncomeGrowthRate: number): number {
   return sustainableGrowthRate + excessGrowth * 0.35;
 }
 
+function getWorkingYearsRemaining(input: FinancialInput): number {
+  if (
+    input.occupationStatus === "retired" ||
+    input.income <= 0 ||
+    input.age >= input.retirementAge
+  ) {
+    return 0;
+  }
+
+  return Math.max(Math.round(input.retirementAge - input.age), 0);
+}
+
+function getExpenseProjectionYears(input: FinancialInput): number {
+  if (
+    input.occupationStatus === "retired" ||
+    input.age >= input.retirementAge
+  ) {
+    return Math.max(10, Math.round(90 - input.age));
+  }
+
+  return Math.max(Math.round(input.retirementAge - input.age), 0);
+}
+
 function calculateSimulatedIncomePV(
   input: FinancialInput,
   incomeGrowthRate: number,
   discountRate: number
 ): number {
-  if (input.occupationStatus === "retired") {
+  const yearsUntilRetirement = getWorkingYearsRemaining(input);
+
+  if (yearsUntilRetirement <= 0) {
     return 0;
   }
 
-  const yearsUntilRetirement = Math.max(input.retirementAge - input.age, 0);
-
   let totalPV = 0;
 
-  for (let year = 1; year <= yearsUntilRetirement; year++) {
+  for (let year = 1; year <= yearsUntilRetirement; year += 1) {
     const projectedIncome =
       input.income * Math.pow(1 + incomeGrowthRate, year);
 
@@ -82,13 +109,21 @@ function calculateSimulatedExpensePV(
   expenseGrowthRate: number,
   discountRate: number
 ): number {
-  const yearsUntilRetirement = Math.max(input.retirementAge - input.age, 0);
+  const years = getExpenseProjectionYears(input);
+
+  if (years <= 0 || input.monthlyExpenses <= 0) {
+    return 0;
+  }
+
+  const cityExpenseMultiplier = getCityExpenseMultiplier(input.cityType);
+  const adjustedAnnualExpenses =
+    input.monthlyExpenses * 12 * cityExpenseMultiplier;
 
   let totalPV = 0;
 
-  for (let year = 1; year <= yearsUntilRetirement; year++) {
+  for (let year = 1; year <= years; year += 1) {
     const annualExpenses =
-      input.monthlyExpenses * 12 * Math.pow(1 + expenseGrowthRate, year);
+      adjustedAnnualExpenses * Math.pow(1 + expenseGrowthRate, year);
 
     const discountedExpenses =
       annualExpenses / Math.pow(1 + discountRate, year);
@@ -116,8 +151,8 @@ function calculateSimulatedDebtPV(
   input: FinancialInput,
   discountRate: number
 ): number {
-  const monthlyDiscountRate = discountRate / 12;
-  const months = input.debtYearsRemaining * 12;
+  const monthlyDiscountRate = Math.max(0, discountRate / 12);
+  const months = Math.max(0, input.debtYearsRemaining * 12);
 
   const normalDebtPV = presentValueOfAnnuity(
     input.debtPayment,
@@ -162,10 +197,16 @@ export function runMonteCarloSimulation(
   const baseIndustryGrowth = getIndustryGrowthBaseline(input.industry);
   const baseDiscountRate = input.discountRate / 100;
   const baseInvestmentReturn = input.expectedInvestmentReturn / 100;
-  const baseExpenseGrowth = input.expenseGrowthRate / 100;
+
+  const cityGrowthAdjustment = getCityExpenseGrowthAdjustment(input.cityType);
+  const baseExpenseGrowth =
+    input.expenseGrowthRate / 100 + cityGrowthAdjustment;
 
   const rawBaseIncomeGrowth =
-    input.occupationStatus === "unemployed"
+    input.occupationStatus === "unemployed" ||
+    input.occupationStatus === "retired" ||
+    input.income <= 0 ||
+    input.age >= input.retirementAge
       ? 0
       : input.baseIncomeGrowthRate / 100 + baseIndustryGrowth;
 
@@ -174,7 +215,7 @@ export function runMonteCarloSimulation(
 
   const netPositions: number[] = [];
 
-  for (let i = 0; i < simulations; i++) {
+  for (let i = 0; i < simulations; i += 1) {
     const simulatedDiscountRate = Math.max(
       0.01,
       randomNormal(baseDiscountRate, 0.015)
@@ -193,7 +234,7 @@ export function runMonteCarloSimulation(
     const investmentReturn = randomNormal(baseInvestmentReturn, 0.08);
 
     const expenseGrowthRate = Math.max(
-      0,
+      -0.02,
       randomNormal(baseExpenseGrowth, 0.01)
     );
 

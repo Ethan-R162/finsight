@@ -1,6 +1,6 @@
 import { FinancialInput, ScoreBreakdown } from "@/types/financial";
 
-function clampScore(score: number): number {
+function clampCategoryScore(score: number): number {
   return Math.max(0, Math.min(25, Math.round(score)));
 }
 
@@ -18,6 +18,87 @@ function getLiquidSafetyMonths(input: FinancialInput): number {
   return getLiquidSafetyAssets(input) / input.monthlyExpenses;
 }
 
+function isHousingGoal(input: FinancialInput): boolean {
+  return input.goal === "buy_house" || input.goal === "rent_vs_buy";
+}
+
+function calculateRetirementNeed(input: FinancialInput): number {
+  const annualExpenses = input.monthlyExpenses * 12;
+
+  if (annualExpenses <= 0) return 0;
+
+  return annualExpenses * 25;
+}
+
+function calculateRetirementCoverageRatio(
+  input: FinancialInput,
+  assetValue: number
+): number {
+  const retirementNeed = calculateRetirementNeed(input);
+
+  if (retirementNeed <= 0) return 0;
+
+  return assetValue / retirementNeed;
+}
+
+function applyGoalAwareScoreCap(
+  input: FinancialInput,
+  totalScore: number,
+  goalFitScore: number,
+  netPosition: number,
+  assetValue: number
+): number {
+  let adjustedScore = totalScore;
+
+  if (input.goal === "retirement") {
+    const retirementCoverageRatio = calculateRetirementCoverageRatio(
+      input,
+      assetValue
+    );
+
+    /*
+      Retirement should be more heavily capped because the goal itself is the
+      user's selected objective. A user can have strong liquidity, low debt,
+      and assets, but if projected assets cover less than retirement need,
+      the overall readiness score should not look overly strong.
+    */
+    if (retirementCoverageRatio < 0.5) {
+      adjustedScore = Math.min(adjustedScore, 60);
+    } else if (retirementCoverageRatio < 0.75) {
+      adjustedScore = Math.min(adjustedScore, 70);
+    } else if (retirementCoverageRatio < 1) {
+      adjustedScore = Math.min(adjustedScore, 80);
+    }
+
+    if (netPosition < 0) {
+      adjustedScore = Math.min(adjustedScore, 65);
+    }
+
+    if (goalFitScore <= 5) {
+      adjustedScore = Math.min(adjustedScore, 60);
+    }
+  }
+
+  if (isHousingGoal(input)) {
+    const housePriceToIncome =
+      input.income > 0 ? input.targetHousePrice / input.income : Infinity;
+
+    if (housePriceToIncome > 8) {
+      adjustedScore = Math.min(adjustedScore, 60);
+    } else if (housePriceToIncome > 5) {
+      adjustedScore = Math.min(adjustedScore, 75);
+    }
+  }
+
+  if (goalFitScore <= 7) {
+    adjustedScore = Math.min(adjustedScore, 65);
+  } else if (goalFitScore <= 12) {
+    adjustedScore = Math.min(adjustedScore, 75);
+  }
+
+  return clampTotalScore(adjustedScore);
+}
+
 export function calculateFinancialScore(
   input: FinancialInput,
   netPosition: number,
@@ -25,10 +106,11 @@ export function calculateFinancialScore(
   debtPV: number
 ): ScoreBreakdown {
   const liquidSafetyAssets = getLiquidSafetyAssets(input);
-
   const liquidSafetyMonths = getLiquidSafetyMonths(input);
 
-  const emergencyFundScore = clampScore((liquidSafetyMonths / 6) * 25);
+  const emergencyFundScore = clampCategoryScore(
+    (liquidSafetyMonths / 6) * 25
+  );
 
   let debtHealthScore = 25;
 
@@ -44,21 +126,29 @@ export function calculateFinancialScore(
     debtHealthScore -= 5;
   }
 
-  debtHealthScore = clampScore(debtHealthScore);
+  debtHealthScore = clampCategoryScore(debtHealthScore);
+
+  const annualExpenses = input.monthlyExpenses * 12;
 
   const assetToExpenseRatio =
-    input.monthlyExpenses > 0
-      ? assetValue / (input.monthlyExpenses * 12)
-      : 0;
+    annualExpenses > 0 ? assetValue / annualExpenses : 0;
 
-  const assetStrengthScore = clampScore((assetToExpenseRatio / 3) * 25);
+  const assetStrengthScore = clampCategoryScore(
+    (assetToExpenseRatio / 3) * 25
+  );
 
   let goalFitScore = 15;
 
-  if (input.goal === "buy_house" || input.goal === "rent_vs_buy") {
+  if (isHousingGoal(input)) {
     const downPaymentTarget = input.targetHousePrice * 0.2;
+    const housePriceToIncome =
+      input.income > 0 ? input.targetHousePrice / input.income : Infinity;
 
-    if (liquidSafetyAssets >= downPaymentTarget) {
+    if (housePriceToIncome > 8) {
+      goalFitScore = 7;
+    } else if (housePriceToIncome > 5) {
+      goalFitScore = 12;
+    } else if (liquidSafetyAssets >= downPaymentTarget) {
       goalFitScore = 25;
     } else if (input.timeHorizon === "under_1_year") {
       goalFitScore = 8;
@@ -67,9 +157,7 @@ export function calculateFinancialScore(
     } else {
       goalFitScore = 19;
     }
-  }
-
-  if (input.goal === "scholarship") {
+  } else if (input.goal === "scholarship") {
     if (input.scholarshipPercent >= 75) {
       goalFitScore = 25;
     } else if (
@@ -85,30 +173,49 @@ export function calculateFinancialScore(
     } else {
       goalFitScore = 10;
     }
-  }
+  } else if (input.goal === "retirement") {
+    const retirementCoverageRatio = calculateRetirementCoverageRatio(
+      input,
+      assetValue
+    );
 
-  if (input.goal === "retirement") {
-    if (netPosition > 0 && input.age >= 50) {
+    if (retirementCoverageRatio >= 1.25 && netPosition > 0) {
+      goalFitScore = 25;
+    } else if (retirementCoverageRatio >= 1 && netPosition > 0) {
       goalFitScore = 22;
-    } else if (netPosition > 0) {
-      goalFitScore = 17;
+    } else if (retirementCoverageRatio >= 0.75) {
+      goalFitScore = 16;
+    } else if (retirementCoverageRatio >= 0.5) {
+      goalFitScore = 10;
     } else {
-      goalFitScore = 8;
+      goalFitScore = 4;
     }
-  }
-
-  if (input.goal === "invest_assets") {
-    if (liquidSafetyMonths >= 3 && input.creditCardAPR < 15) {
+  } else if (input.goal === "invest_assets") {
+    if (
+      liquidSafetyMonths >= 3 &&
+      input.creditCardDebt === 0 &&
+      input.creditCardAPR < 15
+    ) {
+      goalFitScore = 25;
+    } else if (liquidSafetyMonths >= 3 && input.creditCardAPR < 15) {
       goalFitScore = 22;
     } else {
       goalFitScore = 10;
     }
   }
 
-  goalFitScore = clampScore(goalFitScore);
+  goalFitScore = clampCategoryScore(goalFitScore);
 
-  const totalScore = clampTotalScore(
+  const rawTotalScore = clampTotalScore(
     emergencyFundScore + debtHealthScore + assetStrengthScore + goalFitScore
+  );
+
+  const totalScore = applyGoalAwareScoreCap(
+    input,
+    rawTotalScore,
+    goalFitScore,
+    netPosition,
+    assetValue
   );
 
   return {
